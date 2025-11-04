@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Apps Script Test</title>
+</head>
+<body>
+    <h1>Google Apps Script Test</h1>
+    <button onclick="testPost()">Test Post to Apps Script</button>
+    <div id="result"></div>
+
+    <script>
+        // Use your actual Google Apps Script deployment URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyKnWU1bfZWHv8BidjvUngPUpNTAQKuurttNz4f2lZvxcdsJLRtTG3oYaME-EvboZnN/exec';
+
+        async function testPost() {
+            const data = {
+                user: 'Test User',
+                
+                role: 'Officeboy',
+                checklistType: 'opening',
+                task: 'Test Task',
+                status: 'Completed',
+                timestamp: new Date().toISOString(),
+                remarks: 'Test remarks',
+                supervisor: '',
+                supervisorTimestamp: '',
+                supervisorRemarks: ''
+            };
+
+            try {
+                document.getElementById('result').innerHTML = 'Sending request...';
+                
+                console.log('Sending data:', data);
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors', // Explicitly set CORS mode
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+                
+                if (response.ok) {
+                    document.getElementById('result').innerHTML = `Success: ${responseText}`;
+                } else {
+                    document.getElementById('result').innerHTML = `Error: ${response.status} - ${responseText}`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
