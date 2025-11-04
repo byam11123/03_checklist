@@ -83,7 +83,17 @@ function doPost(e) {
     
     if (data.role === 'Supervisor' && data.checklistId) {
       // Supervisor is updating an existing checklist - update only supervisor columns
+      // The checklistId from our frontend corresponds to the row index (id = i + 1 from getChecklistHistory)
       var updateRow = parseInt(data.checklistId);
+      
+      // Verify that we're not updating the header row
+      if (updateRow < 2) {
+        console.log('Error: Attempting to update header row. checklistId:', data.checklistId, 'updateRow:', updateRow);
+        var output = ContentService
+          .createTextOutput(JSON.stringify({result: 'error', message: 'Invalid checklist ID for update'}))
+          .setMimeType(ContentService.MimeType.JSON);
+        return output;
+      }
       
       // Update only supervisor-related columns
       sheet.getRange(updateRow, 11, 1, 4).setValues([[  // Starting from column K (Supervisor Name)
@@ -267,7 +277,7 @@ function getChecklistHistory(e) {
       }
 
       entries.push({
-        id: (i + 1).toString(), // Convert to string for consistency
+        id: (i + 2).toString(), // Convert to string for consistency; +2 because data rows start at index 2 in sheet (after header)
         date: formattedDate,
         time: formattedTime,
         loginTime: (row[2] || '').toString(),
@@ -357,7 +367,7 @@ function getChecklistDetail(e) {
         }
 
         entries.push({
-          id: (i + 1).toString(),
+          id: (i + 2).toString(), // +2 because data rows start at index 2 in sheet (after header)
           date: formattedDateDetail,
           time: formattedTimeDetail,
           loginTime: (row[2] || '').toString(),
