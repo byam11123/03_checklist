@@ -23,7 +23,7 @@ const HistoryPage = () => {
           setChecklists(data);
         } else {
           // For office boys, show only their own checklists
-          setChecklists(data.filter(entry => entry.user === user.name));
+          setChecklists(data.filter(entry => entry.name === user.name));
         }
         setLoading(false);
       } catch (err: any) {
@@ -108,7 +108,7 @@ const HistoryPage = () => {
                       {entry.checklistType.charAt(0).toUpperCase() + entry.checklistType.slice(1)} Checklist
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {entry.user} • {entry.date} • {entry.time}
+                      {entry.name} • {entry.date} • {entry.time}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {entry.completedTasks}/{entry.totalTasks} tasks completed ({entry.completionPercentage}%)
@@ -127,18 +127,18 @@ const HistoryPage = () => {
                   <div className="flex items-center text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Status:</span>
                     <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      {entry.supervisor ? 'Reviewed' : 'Pending Review'}
+                      {entry.supervisorName ? 'Reviewed' : 'Pending Review'}
                     </span>
                   </div>
                   
-                  {entry.supervisor && (
+                  {entry.supervisorName && (
                     <div className="mt-2 text-sm">
                       <p className="text-gray-600 dark:text-gray-400">
-                        <span className="font-medium">Reviewed by:</span> {entry.supervisor}
+                        <span className="font-medium">Reviewed by:</span> {entry.supervisorName}
                       </p>
-                      {entry.supervisorTimestamp && (
+                      {entry.verifiedAt && (
                         <p className="text-gray-600 dark:text-gray-400">
-                          <span className="font-medium">On:</span> {entry.supervisorTimestamp}
+                          <span className="font-medium">On:</span> {entry.verifiedAt}
                         </p>
                       )}
                     </div>

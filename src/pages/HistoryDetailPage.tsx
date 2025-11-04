@@ -62,9 +62,13 @@ const HistoryDetailPage = () => {
       
       // Prepare the updated checklist data
       const updatedData = {
-        ...checklist,
-        supervisor: user.name,
-        supervisorTimestamp: new Date().toLocaleString('en-US', {
+        checklistId: id,  // Ensure checklistId is passed for updating
+        role: 'Supervisor',  // Indicate this is a supervisor update
+        supervisor: user.name, // Use the field name expected by Google Apps Script
+        supervisorName: user.name, // Also include the field name used in our types
+        supervisorRemarks: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Use field name expected by script
+        supervisorReview: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Also include field for our types
+        verifiedAt: new Date().toLocaleString('en-US', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
@@ -72,9 +76,8 @@ const HistoryDetailPage = () => {
           minute: '2-digit',
           second: '2-digit',
           hour12: false
-        }).replace(',', ''),
-        supervisorReview: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Set review status if any supervisor remarks exist
-        tasks: checklist.tasks
+        }).replace(',', ''), // Include field for our types
+        tasks: checklist.tasks // Include tasks in case they need to be updated
       };
 
       // Update the checklist in the backend
@@ -151,7 +154,7 @@ const HistoryDetailPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Checklist Info</h3>
-              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">User:</span> {checklist.user}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">User:</span> {checklist.name}</p>
               <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Date:</span> {checklist.date}</p>
               <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Time:</span> {checklist.time}</p>
               <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Type:</span> {checklist.checklistType}</p>
@@ -164,21 +167,21 @@ const HistoryDetailPage = () => {
               <p className="text-gray-600 dark:text-gray-400">
                 <span className="font-medium">Status:</span>
                 <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                  checklist.supervisor 
+                  checklist.supervisorName
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                 }`}>
-                  {checklist.supervisor ? 'Reviewed' : 'Pending Review'}
+                  {checklist.supervisorName ? 'Reviewed' : 'Pending Review'}
                 </span>
               </p>
-              {checklist.supervisor && (
+              {checklist.supervisorName && (
                 <>
                   <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Reviewed by:</span> {checklist.supervisor}
+                    <span className="font-medium">Reviewed by:</span> {checklist.supervisorName}
                   </p>
-                  {checklist.supervisorTimestamp && (
+                  {checklist.verifiedAt && (
                     <p className="text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">On:</span> {checklist.supervisorTimestamp}
+                      <span className="font-medium">On:</span> {checklist.verifiedAt}
                     </p>
                   )}
                 </>

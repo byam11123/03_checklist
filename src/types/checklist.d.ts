@@ -11,13 +11,13 @@ export interface ChecklistEntry {
   id: string;
   date: string;
   time: string;
-  userType: string;
+  role: string;
   checklistType: string;
-  user: string;
+  name: string;
   tasks: Task[];
   completedTasks: number;
   totalTasks: number;
   completionPercentage: number;
-  supervisor: string;
-  supervisorTimestamp: string;
+  supervisorName: string;
+  verifiedAt: string;
 }

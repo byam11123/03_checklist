@@ -188,9 +188,9 @@ export const checklistService = {
               id: '2025-11-03_opening_john',
               date: '11/03/2025',
               time: '08:30:15',
-              userType: 'Officeboy',
+              role: 'Officeboy',
               checklistType: 'opening',
-              user: 'John Doe',
+              name: 'John Doe',
               tasks: [
                 { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
                 { taskName: 'Camera On', status: 'Completed', remarks: '', supervisorRemarks: '' },
@@ -206,16 +206,16 @@ export const checklistService = {
               completedTasks: 10,
               totalTasks: 10,
               completionPercentage: 100,
-              supervisor: '',
-              supervisorTimestamp: ''
+              supervisorName: '',
+              verifiedAt: ''
             },
             {
               id: '2025-11-03_closing_jane',
               date: '11/03/2025',
               time: '18:45:30',
-              userType: 'Officeboy',
+              role: 'Officeboy',
               checklistType: 'closing',
-              user: 'Jane Smith',
+              name: 'Jane Smith',
               tasks: [
                 { taskName: 'Light OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
                 { taskName: 'Camera OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
@@ -231,16 +231,16 @@ export const checklistService = {
               completedTasks: 10,
               totalTasks: 10,
               completionPercentage: 100,
-              supervisor: 'Supervisor Bob',
-              supervisorTimestamp: '11/03/2025, 19:15:20'
+              supervisorName: 'Supervisor Bob',
+              verifiedAt: '11/03/2025, 19:15:20'
             },
             {
               id: '2025-11-02_opening_mike',
               date: '11/02/2025',
               time: '09:15:45',
-              userType: 'Officeboy',
+              role: 'Officeboy',
               checklistType: 'opening',
-              user: 'Mike Johnson',
+              name: 'Mike Johnson',
               tasks: [
                 { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
                 { taskName: 'Camera On', status: 'Pending', remarks: 'Camera not working', supervisorRemarks: 'Need to fix camera' },
@@ -256,8 +256,8 @@ export const checklistService = {
               completedTasks: 9,
               totalTasks: 10,
               completionPercentage: 90,
-              supervisor: 'Supervisor Bob',
-              supervisorTimestamp: '11/02/2025, 10:30:15'
+              supervisorName: 'Supervisor Bob',
+              verifiedAt: '11/02/2025, 10:30:15'
             }
           ];
           resolve(mockData);

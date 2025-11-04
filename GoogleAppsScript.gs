@@ -95,17 +95,12 @@ function doPost(e) {
       
       console.log('Successfully updated supervisor columns for checklist at row', updateRow);
       
-      // Create response with CORS headers
+      // Create response
       var output = ContentService
         .createTextOutput(JSON.stringify({result: 'success', message: 'Supervisor verification updated successfully', updatedRow: updateRow}))
         .setMimeType(ContentService.MimeType.JSON);
       
-      output.setHeaders({
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      });
-      
+      // Note: Google Apps Script handles CORS automatically for published web apps
       return output;
     } else if (data.role === 'Officeboy') {
       // Office Boys: prevent duplicate submissions for the same checklist type in a day
@@ -276,17 +271,17 @@ function getChecklistHistory(e) {
         date: formattedDate,
         time: formattedTime,
         loginTime: (row[2] || '').toString(),
-        name: (row[3] || '').toString(), // Ensure name is a string
-        role: (row[4] || '').toString(), // Ensure role is a string
+        name: (row[3] || '').toString(), // Original field name
+        role: (row[4] || '').toString(), // Original field name
         checklistType: (row[5] || '').toString(),
         tasks: tasks,
         completedTasks: parseInt(row[7]) || 0,
         totalTasks: parseInt(row[8]) || 0,
         completionPercentage: parseInt(row[9]) || 0,
-        supervisorName: (row[10] || '').toString(),
+        supervisorName: (row[10] || '').toString(), // Original field name
         supervisorVerified: (row[11] || '').toString(),
         supervisorReview: (row[12] || '').toString(),
-        verifiedAt: (row[13] || '').toString()
+        verifiedAt: (row[13] || '').toString() // Original field name
       });
     }
     
@@ -366,17 +361,17 @@ function getChecklistDetail(e) {
           date: formattedDateDetail,
           time: formattedTimeDetail,
           loginTime: (row[2] || '').toString(),
-          name: (row[3] || '').toString(),  // Make sure name is set properly
-          role: (row[4] || '').toString(),
+          name: (row[3] || '').toString(),  // Original field name
+          role: (row[4] || '').toString(),  // Original field name
           checklistType: (row[5] || '').toString(),
           tasks: tasks,
           completedTasks: parseInt(row[7]) || 0,
           totalTasks: parseInt(row[8]) || 0,
           completionPercentage: parseInt(row[9]) || 0,
-          supervisorName: (row[10] || '').toString(),
+          supervisorName: (row[10] || '').toString(),  // Original field name
           supervisorVerified: (row[11] || '').toString(),
           supervisorReview: (row[12] || '').toString(),
-          verifiedAt: (row[13] || '').toString()
+          verifiedAt: (row[13] || '').toString()  // Original field name
         });
       }
     }
@@ -403,29 +398,14 @@ function getChecklistDetail(e) {
 // We'll simply return the entries as they are.
 function groupEntriesByChecklist(entries) {
   // Each entry is already a complete checklist submission with all tasks in the 'tasks' field
-  var mappedEntries = [];
   for (var i = 0; i < entries.length; i++) {
-    // Create a new object with the expected fields for the frontend
-    var mappedEntry = {
-      id: entries[i].id,
-      date: entries[i].date,
-      time: entries[i].time,
-      loginTime: entries[i].loginTime,
-      user: entries[i].name,  // Map name to user
-      userType: entries[i].role,  // Map role to userType
-      checklistType: entries[i].checklistType,
-      tasks: entries[i].tasks,
-      completedTasks: entries[i].completedTasks,
-      totalTasks: entries[i].totalTasks,
-      completionPercentage: entries[i].completionPercentage,
-      supervisor: entries[i].supervisorName,  // Map supervisorName to supervisor
-      supervisorVerified: entries[i].supervisorVerified,
-      supervisorReview: entries[i].supervisorReview,
-      supervisorTimestamp: entries[i].verifiedAt  // Map verifiedAt to supervisorTimestamp
-    };
-    mappedEntries.push(mappedEntry);
+    // Add a user field for compatibility with frontend
+    entries[i].user = entries[i].name;  // Map name to user
+    entries[i].userType = entries[i].role;  // Map role to userType
+    entries[i].supervisor = entries[i].supervisorName;  // Map supervisorName to supervisor
+    entries[i].supervisorTimestamp = entries[i].verifiedAt;  // Map verifiedAt to supervisorTimestamp
   }
-  return mappedEntries;
+  return entries;
 }
 
 // Function to create a new spreadsheet if needed (run once to initialize)
