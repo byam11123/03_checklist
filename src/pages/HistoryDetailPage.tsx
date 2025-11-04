@@ -1,28 +1,262 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import { checklistService } from '../api/checklistService';
+import type { ChecklistEntry } from '../types/checklist';
 import { useUser } from '../context/UserContext';
 
 const HistoryDetailPage = () => {
-  const params = useParams();
-  const id = params.id as string;
+  const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const navigate = useNavigate();
+  const [checklist, setChecklist] = useState<ChecklistEntry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
+
+  useEffect(() => {
+    const loadChecklistDetail = async () => {
+      try {
+        if (!id) {
+          setError('Checklist ID is required');
+          setLoading(false);
+          return;
+        }
+        const data = await checklistService.fetchChecklistDetail(id);
+        if (data) {
+          setChecklist(data);
+        } else {
+          setError('Checklist not found');
+        }
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load checklist details');
+        setLoading(false);
+        console.error('Error loading checklist detail:', err);
+      }
+    };
+
+    loadChecklistDetail();
+  }, [id]);
+
+  const handleReviewTask = (taskIndex: number, remarks: string) => {
+    if (!checklist) return;
+
+    const updatedTasks = [...checklist.tasks];
+    updatedTasks[taskIndex] = {
+      ...updatedTasks[taskIndex],
+      supervisorRemarks: remarks
+    };
+
+    setChecklist({
+      ...checklist,
+      tasks: updatedTasks
+    });
+  };
+
+  const handleSubmitReview = async () => {
+    if (!checklist || !id) return;
+
+    try {
+      setIsReviewing(true);
+      
+      // Prepare the updated checklist data
+      const updatedData = {
+        ...checklist,
+        supervisor: user.name,
+        supervisorTimestamp: new Date().toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).replace(',', ''),
+        supervisorReview: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Set review status if any supervisor remarks exist
+        tasks: checklist.tasks
+      };
+
+      // Update the checklist in the backend
+      await checklistService.updateChecklist(id, updatedData);
+      
+      // Refresh the checklist data
+      const updatedChecklist = await checklistService.fetchChecklistDetail(id);
+      if (updatedChecklist) {
+        setChecklist(updatedChecklist);
+      }
+      
+      alert('Review submitted successfully!');
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      alert('Error submitting review');
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Header />
+        <main className="container mx-auto px-4 py-8 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading checklist details...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !checklist) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              Checklist Details
+            </h2>
+            <p className="text-red-500">{error || 'Checklist not found'}</p>
+            <button
+              onClick={() => navigate('/history')}
+              className="mt-4 px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+            >
+              Back to History
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-            Checklist Details
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
+            {checklist.checklistType.charAt(0).toUpperCase() + checklist.checklistType.slice(1)} Checklist Details
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">Details for checklist {id} would be shown here</p>
           <button
             onClick={() => navigate('/history')}
-            className="mt-4 px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+            className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
           >
             Back to History
           </button>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Checklist Info</h3>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">User:</span> {checklist.user}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Date:</span> {checklist.date}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Time:</span> {checklist.time}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Type:</span> {checklist.checklistType}</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Progress:</span> {checklist.completedTasks}/{checklist.totalTasks} tasks ({checklist.completionPercentage}%)
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Review Status</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Status:</span>
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                  checklist.supervisor 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                }`}>
+                  {checklist.supervisor ? 'Reviewed' : 'Pending Review'}
+                </span>
+              </p>
+              {checklist.supervisor && (
+                <>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Reviewed by:</span> {checklist.supervisor}
+                  </p>
+                  {checklist.supervisorTimestamp && (
+                    <p className="text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">On:</span> {checklist.supervisorTimestamp}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Tasks</h3>
+          
+          <div className="space-y-4">
+            {checklist.tasks.map((task, index) => (
+              <div 
+                key={index} 
+                className={`p-4 rounded-lg transition-colors duration-300 ${
+                  task.status === 'Completed' 
+                    ? 'bg-green-50 dark:bg-green-900/30' 
+                    : 'bg-red-50 dark:bg-red-900/30'
+                }`}
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full ${
+                      task.status === 'Completed' 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-red-500 text-white'
+                    }`}>
+                      {task.status === 'Completed' ? '✓' : '✗'}
+                    </span>
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">{task.taskName}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <span className="font-medium">Status:</span> {task.status}
+                      </p>
+                      {task.remarks && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <span className="font-medium">Officeboy remarks:</span> {task.remarks}
+                        </p>
+                      )}
+                      {task.supervisorRemarks && (
+                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                          <span className="font-medium">Supervisor remarks:</span> {task.supervisorRemarks}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {user.role === 'Supervisor' && (
+                    <div className="mt-3 md:mt-0 md:ml-4 flex flex-col w-full md:w-auto">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Supervisor Remarks
+                      </label>
+                      <input
+                        type="text"
+                        value={task.supervisorRemarks || ''}
+                        onChange={(e) => handleReviewTask(index, e.target.value)}
+                        placeholder="Add your review comment..."
+                        className="w-full md:w-64 p-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {user.role === 'Supervisor' && (
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={handleSubmitReview}
+                disabled={isReviewing}
+                className="px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+              >
+                {isReviewing ? 'Submitting Review...' : 'Submit Review'}
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>

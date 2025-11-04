@@ -45,7 +45,7 @@ const ChecklistPage = () => {
   };
 
   // Format date and time in a readable format
-  const formatDateTime = (date) => {
+  const formatDateTime = (date: Date) => {
     return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
@@ -58,18 +58,6 @@ const ChecklistPage = () => {
   };
 
   const handleSubmit = () => {
-    // Check if Office Boy is trying to submit again for the same checklist type today
-    if (user.role === 'Officeboy') {
-      const today = new Date().toLocaleDateString();
-      const storageKey = `lastSubmission_${user.name}_${type}_${today}`;
-      const lastSubmission = localStorage.getItem(storageKey);
-      
-      if (lastSubmission) {
-        alert(`Duplicate submission detected: You have already submitted a ${type} checklist today. As an Office Boy, you can only submit one ${type} checklist per day. Please contact a supervisor for any updates.`);
-        return; // Exit early, don't submit
-      }
-    }
-    
     const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
     
     // Calculate completion statistics
@@ -78,13 +66,13 @@ const ChecklistPage = () => {
     const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     console.log('Submitting data to Google Sheets...');
-    console.log(`Total tasks: ${totalTasks}, Completed tasks: ${completedTasks}`);
+    console.log(`Total tasks: ${totalTasks}, Completed tasks: ${totalTasks}`);
     
     setIsSubmitting(true);
     
     // Send all tasks as a single batch to avoid duplicate submission issues
     const currentDateTime = new Date();
-    const payload = {
+    const payload: any = {
       user: user.name,
       role: user.role,
       checklistType: type,
@@ -100,8 +88,19 @@ const ChecklistPage = () => {
       completionPercentage: completionPercentage,
       loginTime: formatDateTime(currentDateTime),
       supervisor: user.role === 'Supervisor' ? user.name : '',
-      supervisorTimestamp: user.role === 'Supervisor' ? formatDateTime(currentDateTime) : ''
+      supervisorTimestamp: user.role === 'Supervisor' ? formatDateTime(currentDateTime) : '',
+      supervisorRemarks: user.role === 'Supervisor' ? 'Supervisor review' : '' // Add supervisor remarks field
     };
+    
+    // If this is a supervisor, they are updating an existing checklist
+    if (user.role === 'Supervisor') {
+      // Get the checklist ID from URL parameter to update the existing row
+      const urlParams = new URLSearchParams(window.location.search);
+      const checklistId = urlParams.get('checklistId');
+      if (checklistId) {
+        payload.checklistId = parseInt(checklistId);
+      }
+    }
     
     console.log('Batch payload:', payload);
 
@@ -115,7 +114,7 @@ const ChecklistPage = () => {
         },
         body: JSON.stringify(payload)
       })
-      .then(response => {
+      .then(() => {
         // With no-cors mode, we can't access response details
         console.log('Batch request sent for checklist type:', type);
         
@@ -128,7 +127,7 @@ const ChecklistPage = () => {
         
         setIsSubmitted(true);
         if (user?.role === 'Supervisor') {
-          alert(`Checklist has been submitted successfully! ${totalTasks} tasks sent. You can view it in History.`);
+          alert(`Supervisor verification has been saved successfully! You can view it in History.`);
         } else {
           alert(`Checklist has been submitted successfully! ${totalTasks} tasks sent.`);
         }
@@ -164,7 +163,9 @@ const ChecklistPage = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">{title}</h2>
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
+              {user.role === 'Supervisor' ? `Review ${title}` : title}
+            </h2>
             <button
               onClick={() => navigate('/dashboard')}
               className="px-4 py-2 font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
@@ -172,6 +173,16 @@ const ChecklistPage = () => {
               Back to Dashboard
             </button>
           </div>
+          
+          {user.role === 'Supervisor' && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <p className="text-blue-800 dark:text-blue-200">
+                <strong>Note:</strong> You are reviewing this {type} checklist. 
+                As a supervisor, you can verify tasks and add remarks to office boy submissions.
+              </p>
+            </div>
+          )}
+          
           <div className="space-y-4">
             {tasks.map((taskState) => (
               <ChecklistItem
@@ -192,13 +203,13 @@ const ChecklistPage = () => {
               </button>
             )}
             {user.role === 'Supervisor' && (
-                 <button
-                 onClick={handleSubmit} // Supervisors also submit their verifications
-                 disabled={isSubmitting}
-                 className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-               >
-                 {isSubmitting ? 'Saving...' : 'Save Verification'}
-               </button>
+              <button
+                onClick={handleSubmit} // Supervisors also submit their verifications
+                disabled={isSubmitting}
+                className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+              >
+                {isSubmitting ? 'Saving Review...' : 'Submit Review'}
+              </button>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { createContext, useState, useContext, type ReactNode } from 'react';
 
 type Role = 'Officeboy' | 'Supervisor' | null;
 

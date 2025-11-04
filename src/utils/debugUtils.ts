@@ -46,14 +46,14 @@ function checkEnvironment() {
 }
 
 // Function to simulate data submission without actually sending to Google Apps Script
-function simulateSubmission(tasks, user, type) {
+function simulateSubmission(tasks: any[], user: { name: string; role: string }, type: string) {
   console.group('=== SUBMISSION SIMULATION ===');
   console.log('User:', user.name);
   console.log('Role:', user.role);
   console.log('Checklist Type:', type);
   console.log('Tasks:');
   
-  tasks.forEach((task, index) => {
+  tasks.forEach((task: any, index: number) => {
     console.log(`${index + 1}. ${task.task}`);
     console.log(`   Status: ${task.isCompleted ? 'Completed' : 'Pending'}`);
     console.log(`   Remarks: ${task.remarks}`);

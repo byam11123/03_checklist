@@ -7,7 +7,8 @@ import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
 
 // A wrapper to protect routes that require authentication
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+import type { ReactElement } from 'react';
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { user } = useUser();
   // When the user first loads, the state is { name: '', role: null }
   // After login, name will be set and/or role will be 'Officeboy' or 'Supervisor'

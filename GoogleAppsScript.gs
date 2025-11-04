@@ -73,9 +73,42 @@ function doPost(e) {
       sheet.setColumnWidth(14, 120); // Verified At
     }
     
-    // Check if an entry for this user, checklist type, and date already exists
-    // Only prevent duplicate submissions for Office Boys, not Supervisors
-    if (data.role === 'Officeboy') {
+    // Calculate completion statistics
+    var completedTasks = data.tasks ? data.tasks.filter(task => task.status === 'Completed').length : 0;
+    var totalTasks = data.tasks ? data.tasks.length : 0;
+    var completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Consolidate all tasks into a single string or JSON format
+    var tasksJson = JSON.stringify(data.tasks);
+    
+    if (data.role === 'Supervisor' && data.checklistId) {
+      // Supervisor is updating an existing checklist - update only supervisor columns
+      var updateRow = parseInt(data.checklistId);
+      
+      // Update only supervisor-related columns
+      sheet.getRange(updateRow, 11, 1, 4).setValues([[  // Starting from column K (Supervisor Name)
+        data.supervisor || sheet.getRange(updateRow, 11).getValue(),                    // Supervisor Name (K)
+        'Yes',                                                                         // Supervisor Verified (L) - when supervisor saves, mark as verified
+        data.supervisorRemarks || sheet.getRange(updateRow, 13).getValue(),             // Supervisor Review (M)
+        new Date().toLocaleString()                                                    // Verified At (N)
+      ]]);
+      
+      console.log('Successfully updated supervisor columns for checklist at row', updateRow);
+      
+      // Create response with CORS headers
+      var output = ContentService
+        .createTextOutput(JSON.stringify({result: 'success', message: 'Supervisor verification updated successfully', updatedRow: updateRow}))
+        .setMimeType(ContentService.MimeType.JSON);
+      
+      output.setHeaders({
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      });
+      
+      return output;
+    } else if (data.role === 'Officeboy') {
+      // Office Boys: prevent duplicate submissions for the same checklist type in a day
       var today = new Date().toLocaleDateString();
       var existingEntry = false;
       
@@ -101,72 +134,47 @@ function doPost(e) {
             break;
           }
         }
+        
+        if (existingEntry) {
+          var output = ContentService
+            .createTextOutput(JSON.stringify({result: 'error', message: 'Submission already exists for today. Office boys cannot submit multiple ' + data.checklistType + ' checklists per day. Contact a supervisor for any updates.'}))
+            .setMimeType(ContentService.MimeType.JSON);
+          
+          // Note: Google Apps Script handles CORS automatically for published web apps
+          return output;
+        }
       }
       
-      // If a submission already exists for today by this Office Boy, return an error
-      if (existingEntry) {
-        console.log('Blocking duplicate submission for', data.user, 'on', today);
-        
-        var output = ContentService
-          .createTextOutput(JSON.stringify({result: 'error', message: 'Submission already exists for today. Office boys cannot submit multiple ' + data.checklistType + ' checklists per day. Supervisor verification required for updates.'}))
-          .setMimeType(ContentService.MimeType.JSON);
-        
-        output.setHeaders({
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        });
-        
-        return output;
-      }
+      // Add single record with consolidated tasks for office boy
+      var newRow = [
+        new Date().toLocaleDateString() || '',     // Date
+        new Date().toLocaleTimeString() || '',     // Submitted At
+        data.loginTime || '',                      // Login Time
+        data.user || '',                           // Name
+        data.role || '',                           // Role
+        data.checklistType || '',                  // Checklist Type
+        tasksJson,                                 // Tasks (consolidated as JSON)
+        completedTasks,                            // Completed Tasks
+        totalTasks,                                // Total Tasks
+        completionPercentage + '%',                // Completion % (format as percentage string)
+        '',                                        // Supervisor Name (K) - empty for now
+        '',                                        // Supervisor Verified (L) - empty for now
+        '',                                        // Supervisor Review (M) - empty for now
+        ''                                         // Verified At (N) - empty for now
+      ];
+      
+      sheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
+      
+      // Log successful entry
+      console.log('Successfully added checklist submission to sheet with', data.tasks.length, 'tasks');
     }
     
-    // Calculate completion statistics
-    var completedTasks = data.tasks ? data.tasks.filter(task => task.status === 'Completed').length : 0;
-    var totalTasks = data.tasks ? data.tasks.length : 0;
-    var completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    // Consolidate all tasks into a single string or JSON format
-    var tasksJson = JSON.stringify(data.tasks);
-    
-    // Find the next empty row
-    var lastRow = sheet.getLastRow();
-    
-    // Add single record with consolidated tasks
-    var newRow = [
-      new Date().toLocaleDateString() || '',     // Date
-      new Date().toLocaleTimeString() || '',     // Submitted At
-      data.loginTime || '',                      // Login Time
-      data.user || '',                           // Name
-      data.role || '',                           // Role
-      data.checklistType || '',                  // Checklist Type
-      tasksJson,                                 // Tasks (consolidated as JSON)
-      completedTasks,                            // Completed Tasks
-      totalTasks,                                // Total Tasks
-      completionPercentage,                      // Completion %
-      data.supervisor || '',                     // Supervisor Name
-      data.supervisor && data.supervisor !== '' ? 'Yes' : '', // Supervisor Verified
-      data.supervisorRemarks || '',              // Supervisor Review
-      data.supervisorTimestamp || ''             // Verified At
-    ];
-    
-    sheet.getRange(lastRow + 1, 1, 1, 14).setValues([newRow]);
-    
-    // Log successful entry
-    console.log('Successfully added checklist submission to sheet with', data.tasks.length, 'tasks');
-    
-    // Create response with CORS headers
+    // Create response
     var output = ContentService
       .createTextOutput(JSON.stringify({result: 'success', message: 'Data recorded successfully', recordsAdded: data.tasks.length}))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Set CORS headers
-    output.setHeaders({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    });
-    
+    // Note: Google Apps Script handles CORS automatically for published web apps
     return output;
   } catch (error) {
     // Log the error for debugging
@@ -212,13 +220,7 @@ function doOptions(e) {
     JSON.stringify({status: 'success', message: 'CORS preflight successful'})
   ).setMimeType(ContentService.MimeType.JSON);
   
-  // Set CORS headers for OPTIONS request
-  output.setHeaders({
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
-  });
-  
+  // Note: Google Apps Script handles CORS automatically for published web apps
   return output;
 }
 
@@ -250,22 +252,41 @@ function getChecklistHistory(e) {
         tasks = [{taskName: 'Error parsing tasks', status: 'Error', remarks: e.message, supervisorRemarks: ''}];
       }
       
+      // Format dates properly from Google Sheets - check if the values are dates or strings
+      var rawDate = row[0];
+      var formattedDate = '';
+      if (rawDate instanceof Date) {
+        formattedDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "MM/dd/yyyy");
+      } else if (rawDate) {
+        // If it's already a string, use it as is
+        formattedDate = rawDate.toString();
+      }
+      
+      var rawTime = row[1];
+      var formattedTime = '';
+      if (rawTime instanceof Date) {
+        formattedTime = Utilities.formatDate(rawTime, Session.getScriptTimeZone(), "HH:mm:ss");
+      } else if (rawTime) {
+        // If it's already a string, use it as is
+        formattedTime = rawTime.toString();
+      }
+
       entries.push({
-        id: i + 1, // Simple ID based on row number
-        date: row[0] || '',       // Date (column A)
-        time: row[1] || '',       // Submitted At (column B)
-        loginTime: row[2] || '',  // Login Time (column C)
-        name: row[3] || '',       // Name (column D)
-        role: row[4] || '',       // Role (column E)
-        checklistType: row[5] || '', // Checklist Type (column F)
-        tasks: tasks,              // Tasks (consolidated as JSON in column G)
-        completedTasks: row[7] || '',    // Completed Tasks (column H)
-        totalTasks: row[8] || '',        // Total Tasks (column I)
-        completionPercentage: row[9] || '', // Completion % (column J)
-        supervisorName: row[10] || '',   // Supervisor Name (column K)
-        supervisorVerified: row[11] || '', // Supervisor Verified (column L)
-        supervisorReview: row[12] || '',   // Supervisor Review (column M)
-        verifiedAt: row[13] || ''         // Verified At (column N)
+        id: (i + 1).toString(), // Convert to string for consistency
+        date: formattedDate,
+        time: formattedTime,
+        loginTime: (row[2] || '').toString(),
+        name: (row[3] || '').toString(), // Ensure name is a string
+        role: (row[4] || '').toString(), // Ensure role is a string
+        checklistType: (row[5] || '').toString(),
+        tasks: tasks,
+        completedTasks: parseInt(row[7]) || 0,
+        totalTasks: parseInt(row[8]) || 0,
+        completionPercentage: parseInt(row[9]) || 0,
+        supervisorName: (row[10] || '').toString(),
+        supervisorVerified: (row[11] || '').toString(),
+        supervisorReview: (row[12] || '').toString(),
+        verifiedAt: (row[13] || '').toString()
       });
     }
     
@@ -276,12 +297,8 @@ function getChecklistHistory(e) {
       .createTextOutput(JSON.stringify(groupedEntries))
       .setMimeType(ContentService.MimeType.JSON);
     
-    output.setHeaders({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    });
-    
+    // Note: Google Apps Script handles CORS automatically for published web apps
+    // No need to manually set headers for CORS when deployed as web app
     return output;
   } catch (error) {
     console.error('Error in getChecklistHistory: ', error);
@@ -289,12 +306,7 @@ function getChecklistHistory(e) {
       .createTextOutput(JSON.stringify({error: error.toString()}))
       .setMimeType(ContentService.MimeType.JSON);
     
-    output.setHeaders({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    });
-    
+    // Note: Google Apps Script handles CORS automatically for published web apps
     return output;
   }
 }
@@ -332,22 +344,39 @@ function getChecklistDetail(e) {
           tasks = [{taskName: 'Error parsing tasks', status: 'Error', remarks: e.message, supervisorRemarks: ''}];
         }
         
+        // Format dates properly from Google Sheets for detail view
+        var rawDateDetail = row[0];
+        var formattedDateDetail = '';
+        if (rawDateDetail instanceof Date) {
+          formattedDateDetail = Utilities.formatDate(rawDateDetail, Session.getScriptTimeZone(), "MM/dd/yyyy");
+        } else if (rawDateDetail) {
+          formattedDateDetail = rawDateDetail.toString();
+        }
+        
+        var rawTimeDetail = row[1];
+        var formattedTimeDetail = '';
+        if (rawTimeDetail instanceof Date) {
+          formattedTimeDetail = Utilities.formatDate(rawTimeDetail, Session.getScriptTimeZone(), "HH:mm:ss");
+        } else if (rawTimeDetail) {
+          formattedTimeDetail = rawTimeDetail.toString();
+        }
+
         entries.push({
-          id: i + 1,
-          date: row[0] || '',
-          time: row[1] || '',
-          loginTime: row[2] || '',
-          name: row[3] || '',
-          role: row[4] || '',
-          checklistType: row[5] || '',
+          id: (i + 1).toString(),
+          date: formattedDateDetail,
+          time: formattedTimeDetail,
+          loginTime: (row[2] || '').toString(),
+          name: (row[3] || '').toString(),  // Make sure name is set properly
+          role: (row[4] || '').toString(),
+          checklistType: (row[5] || '').toString(),
           tasks: tasks,
-          completedTasks: row[7] || '',
-          totalTasks: row[8] || '',
-          completionPercentage: row[9] || '',
-          supervisorName: row[10] || '',
-          supervisorVerified: row[11] || '',
-          supervisorReview: row[12] || '',
-          verifiedAt: row[13] || ''
+          completedTasks: parseInt(row[7]) || 0,
+          totalTasks: parseInt(row[8]) || 0,
+          completionPercentage: parseInt(row[9]) || 0,
+          supervisorName: (row[10] || '').toString(),
+          supervisorVerified: (row[11] || '').toString(),
+          supervisorReview: (row[12] || '').toString(),
+          verifiedAt: (row[13] || '').toString()
         });
       }
     }
@@ -356,12 +385,7 @@ function getChecklistDetail(e) {
       .createTextOutput(JSON.stringify(entries))
       .setMimeType(ContentService.MimeType.JSON);
     
-    output.setHeaders({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    });
-    
+    // Note: Google Apps Script handles CORS automatically for published web apps
     return output;
   } catch (error) {
     console.error('Error in getChecklistDetail: ', error);
@@ -369,12 +393,7 @@ function getChecklistDetail(e) {
       .createTextOutput(JSON.stringify({error: error.toString()}))
       .setMimeType(ContentService.MimeType.JSON);
     
-    output.setHeaders({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    });
-    
+    // Note: Google Apps Script handles CORS automatically for published web apps
     return output;
   }
 }
@@ -384,11 +403,29 @@ function getChecklistDetail(e) {
 // We'll simply return the entries as they are.
 function groupEntriesByChecklist(entries) {
   // Each entry is already a complete checklist submission with all tasks in the 'tasks' field
+  var mappedEntries = [];
   for (var i = 0; i < entries.length; i++) {
-    // Add a user field for compatibility with frontend
-    entries[i].user = entries[i].supervisorName || entries[i].name;
+    // Create a new object with the expected fields for the frontend
+    var mappedEntry = {
+      id: entries[i].id,
+      date: entries[i].date,
+      time: entries[i].time,
+      loginTime: entries[i].loginTime,
+      user: entries[i].name,  // Map name to user
+      userType: entries[i].role,  // Map role to userType
+      checklistType: entries[i].checklistType,
+      tasks: entries[i].tasks,
+      completedTasks: entries[i].completedTasks,
+      totalTasks: entries[i].totalTasks,
+      completionPercentage: entries[i].completionPercentage,
+      supervisor: entries[i].supervisorName,  // Map supervisorName to supervisor
+      supervisorVerified: entries[i].supervisorVerified,
+      supervisorReview: entries[i].supervisorReview,
+      supervisorTimestamp: entries[i].verifiedAt  // Map verifiedAt to supervisorTimestamp
+    };
+    mappedEntries.push(mappedEntry);
   }
-  return entries;
+  return mappedEntries;
 }
 
 // Function to create a new spreadsheet if needed (run once to initialize)

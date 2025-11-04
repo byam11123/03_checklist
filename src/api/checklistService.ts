@@ -1,5 +1,5 @@
 // api/checklistService.ts
-import { ChecklistEntry } from '../types/checklist.d';
+import type { ChecklistEntry } from '../types/checklist';
 
 // Google Apps Script endpoints needed for history management
 // 
@@ -176,109 +176,268 @@ function deleteChecklistEntry(e) {
 // For now, we'll enhance the service to be closer to what will be implemented:
 export const checklistService = {
   async fetchChecklistHistory(): Promise<ChecklistEntry[]> {
-    // In a real implementation, this would call your Google Apps Script endpoint:
-    // const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
-    // const data = await response.json();
+    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
     
-    // For now, return mock data that better represents grouped checklists
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockData: ChecklistEntry[] = [
-          {
-            id: '2025-11-03_opening_john',
-            date: '11/03/2025',
-            time: '08:30:15',
-            userType: 'Officeboy',
-            checklistType: 'opening',
-            user: 'John Doe',
-            tasks: [
-              { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Camera On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Internet On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'System On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Printers On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Floor cleaned (YES/NO)', status: 'Completed', remarks: 'Cleaned properly', supervisorRemarks: '' },
-              { taskName: 'Water Bottles (Filled/Not)', status: 'Completed', remarks: 'Filled', supervisorRemarks: '' },
-              { taskName: 'Water RO - On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Workstation Cleaned', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Bathroom checked (1. water taps 2. handwash 3. freshner)', status: 'Completed', remarks: 'All good', supervisorRemarks: '' },
-            ],
-            completedTasks: 10,
-            totalTasks: 10,
-            completionPercentage: 100,
-            supervisor: '',
-            supervisorTimestamp: ''
-          },
-          {
-            id: '2025-11-03_closing_jane',
-            date: '11/03/2025',
-            time: '18:45:30',
-            userType: 'Officeboy',
-            checklistType: 'closing',
-            user: 'Jane Smith',
-            tasks: [
-              { taskName: 'Light OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Camera OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Internet OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'System OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Printers OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Water RO - OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Files cleared from Workstation', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Almirah closed', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Balcony door closed', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Office locked', status: 'Completed', remarks: '', supervisorRemarks: '' },
-            ],
-            completedTasks: 10,
-            totalTasks: 10,
-            completionPercentage: 100,
-            supervisor: 'Supervisor Bob',
-            supervisorTimestamp: '11/03/2025, 19:15:20'
-          },
-          {
-            id: '2025-11-02_opening_mike',
-            date: '11/02/2025',
-            time: '09:15:45',
-            userType: 'Officeboy',
-            checklistType: 'opening',
-            user: 'Mike Johnson',
-            tasks: [
-              { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Camera On', status: 'Pending', remarks: 'Camera not working', supervisorRemarks: 'Need to fix camera' },
-              { taskName: 'Internet On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'System On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Printers On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Floor cleaned (YES/NO)', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Water Bottles (Filled/Not)', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Water RO - On', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Workstation Cleaned', status: 'Completed', remarks: '', supervisorRemarks: '' },
-              { taskName: 'Bathroom checked (1. water taps 2. handwash 3. freshner)', status: 'Completed', remarks: '', supervisorRemarks: '' },
-            ],
-            completedTasks: 9,
-            totalTasks: 10,
-            completionPercentage: 90,
-            supervisor: 'Supervisor Bob',
-            supervisorTimestamp: '11/02/2025, 10:30:15'
-          }
-        ];
-        resolve(mockData);
-      }, 500);
-    });
+    if (!VITE_APPSCRIPT_URL) {
+      console.warn('VITE_APPSCRIPT_URL is not set. Using mock data.');
+      // Return mock data as fallback
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const mockData: ChecklistEntry[] = [
+            {
+              id: '2025-11-03_opening_john',
+              date: '11/03/2025',
+              time: '08:30:15',
+              userType: 'Officeboy',
+              checklistType: 'opening',
+              user: 'John Doe',
+              tasks: [
+                { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Camera On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Internet On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'System On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Printers On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Floor cleaned (YES/NO)', status: 'Completed', remarks: 'Cleaned properly', supervisorRemarks: '' },
+                { taskName: 'Water Bottles (Filled/Not)', status: 'Completed', remarks: 'Filled', supervisorRemarks: '' },
+                { taskName: 'Water RO - On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Workstation Cleaned', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Bathroom checked (1. water taps 2. handwash 3. freshner)', status: 'Completed', remarks: 'All good', supervisorRemarks: '' },
+              ],
+              completedTasks: 10,
+              totalTasks: 10,
+              completionPercentage: 100,
+              supervisor: '',
+              supervisorTimestamp: ''
+            },
+            {
+              id: '2025-11-03_closing_jane',
+              date: '11/03/2025',
+              time: '18:45:30',
+              userType: 'Officeboy',
+              checklistType: 'closing',
+              user: 'Jane Smith',
+              tasks: [
+                { taskName: 'Light OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Camera OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Internet OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'System OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Printers OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Water RO - OFF', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Files cleared from Workstation', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Almirah closed', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Balcony door closed', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Office locked', status: 'Completed', remarks: '', supervisorRemarks: '' },
+              ],
+              completedTasks: 10,
+              totalTasks: 10,
+              completionPercentage: 100,
+              supervisor: 'Supervisor Bob',
+              supervisorTimestamp: '11/03/2025, 19:15:20'
+            },
+            {
+              id: '2025-11-02_opening_mike',
+              date: '11/02/2025',
+              time: '09:15:45',
+              userType: 'Officeboy',
+              checklistType: 'opening',
+              user: 'Mike Johnson',
+              tasks: [
+                { taskName: 'Light On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Camera On', status: 'Pending', remarks: 'Camera not working', supervisorRemarks: 'Need to fix camera' },
+                { taskName: 'Internet On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'System On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Printers On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Floor cleaned (YES/NO)', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Water Bottles (Filled/Not)', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Water RO - On', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Workstation Cleaned', status: 'Completed', remarks: '', supervisorRemarks: '' },
+                { taskName: 'Bathroom checked (1. water taps 2. handwash 3. freshner)', status: 'Completed', remarks: '', supervisorRemarks: '' },
+              ],
+              completedTasks: 9,
+              totalTasks: 10,
+              completionPercentage: 90,
+              supervisor: 'Supervisor Bob',
+              supervisorTimestamp: '11/02/2025, 10:30:15'
+            }
+          ];
+          resolve(mockData);
+        }, 500);
+      });
+    } else {
+      try {
+        // Call your Google Apps Script endpoint to get the real data
+        const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
+        
+        // With no-cors, we can't check the response status, but we can get the text
+        const responseText = await response.text();
+        
+        // Try to parse the JSON response
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Error parsing response from Google Apps Script:', responseText);
+          throw new Error(`Invalid response from Google Apps Script. Please check that your Google Apps Script is properly deployed and the URL is correct. Response: ${responseText.substring(0, 200)}...`);
+        }
+        
+        // Check if the response contains an error
+        if (data.error) {
+          console.error('Error from Google Apps Script:', data.error);
+          throw new Error(`Google Apps Script error: ${data.error}. Please verify your Google Apps Script is correctly deployed and accessible.`);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Error fetching checklist history:', error);
+        // Re-throw with more helpful message
+        throw error instanceof Error ? error : new Error('Failed to fetch checklist history. Please check your Google Apps Script configuration.');
+      }
+    }
+
+    try {
+      // Call your Google Apps Script endpoint to get the real data
+      const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
+      
+      // With no-cors, we can't check the response status, but we can get the text
+      const responseText = await response.text();
+      
+      // Try to parse the JSON response
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing response from Google Apps Script:', responseText);
+        throw new Error(`Invalid response from Google Apps Script: ${responseText}`);
+      }
+      
+      // Check if the response contains an error
+      if (data.error) {
+        console.error('Error from Google Apps Script:', data.error);
+        throw new Error(`Google Apps Script error: ${data.error}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching checklist history:', error);
+      throw error;
+    }
   },
 
   async fetchChecklistDetail(id: string): Promise<ChecklistEntry | null> {
-    const entries = await this.fetchChecklistHistory();
-    return entries.find(entry => entry.id === id) || null;
+    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+    
+    if (!VITE_APPSCRIPT_URL) {
+      console.warn('VITE_APPSCRIPT_URL is not set. Using mock data.');
+      const entries = await this.fetchChecklistHistory();
+      return entries.find(entry => entry.id === id) || null;
+    }
+
+    try {
+      const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getDetail&id=${id}`);
+      const responseText = await response.text();
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing detail response from Google Apps Script:', responseText);
+        throw new Error(`Invalid detail response from Google Apps Script. Please check that your Google Apps Script is properly deployed and the URL is correct. Response: ${responseText.substring(0, 200)}...`);
+      }
+      
+      if (data.error) {
+        console.error('Error from Google Apps Script:', data.error);
+        throw new Error(`Google Apps Script error: ${data.error}. Please verify your Google Apps Script is correctly deployed and accessible.`);
+      }
+      
+      // If data is an array and has one item, return the first item
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0] as ChecklistEntry;
+      }
+      
+      return data as ChecklistEntry;
+    } catch (error) {
+      console.error('Error fetching checklist detail:', error);
+      throw error instanceof Error ? error : new Error('Failed to fetch checklist detail. Please check your Google Apps Script configuration.');
+    }
   },
 
   async deleteChecklist(id: string): Promise<boolean> {
-    // In a real implementation, this would call your Google Apps Script
-    // to delete the entry from Google Sheets
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock deletion - in real app, this would call the delete endpoint
-        console.log(`Deleting checklist with id: ${id}`);
-        resolve(true);
-      }, 300);
-    });
+    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+    
+    if (!VITE_APPSCRIPT_URL) {
+      console.warn('VITE_APPSCRIPT_URL is not set. Cannot delete.');
+      return false;
+    }
+
+    try {
+      await fetch(VITE_APPSCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          id: id
+        })
+      });
+      
+      // Note: With no-cors, we can't verify the response, so we assume success
+      console.log(`Checklist ${id} deletion request sent`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting checklist:', error);
+      return false;
+    }
+  },
+  
+  async updateChecklist(id: string, updatedData: any): Promise<boolean> {
+    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+    
+    if (!VITE_APPSCRIPT_URL) {
+      console.warn('VITE_APPSCRIPT_URL is not set. Cannot update.');
+      return false;
+    }
+
+    try {
+      // For supervisor reviews, we need to format the data correctly
+      // The Google Apps Script expects specific field names
+      const formattedData = {
+        checklistId: id, // This is used in the Google Apps Script to identify the row to update
+        action: 'update',
+        user: updatedData.user || '',
+        role: 'Supervisor', // Indicate that this is a supervisor update
+        checklistType: updatedData.checklistType || '',
+        tasks: updatedData.tasks || [],
+        supervisor: updatedData.supervisor || '',
+        supervisorTimestamp: updatedData.supervisorTimestamp || '',
+        supervisorRemarks: updatedData.supervisorReview || updatedData.supervisorRemarks || '',
+        // Additional fields that may be needed
+        date: updatedData.date || '',
+        time: updatedData.time || '',
+        loginTime: updatedData.loginTime || '',
+        name: updatedData.name || updatedData.user || '',
+        completedTasks: updatedData.completedTasks || 0,
+        totalTasks: updatedData.totalTasks || 0,
+        completionPercentage: updatedData.completionPercentage || 0,
+        supervisorVerified: 'Yes' // Mark as verified when supervisor reviews
+      };
+
+      await fetch(VITE_APPSCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Google Apps Script requires no-cors mode from web applications
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedData)
+      });
+      
+      // Note: With no-cors, we can't verify the response, so we assume success
+      console.log(`Checklist ${id} update request sent with data:`, formattedData);
+      return true;
+    } catch (error) {
+      console.error('Error updating checklist:', error);
+      return false;
+    }
   }
 };

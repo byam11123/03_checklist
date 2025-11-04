@@ -27,14 +27,12 @@ const DashboardPage = () => {
               <p className="text-gray-500 dark:text-gray-400 mt-2">End the day by completing the closing tasks.</p>
             </div>
           </Link>
-          {user?.role === 'Supervisor' && (
-            <Link to="/history">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
-                <h3 className="text-2xl font-semibold text-purple-600 dark:text-purple-400">Checklist History</h3>
-                <p className="text-gray-500 dark:text-gray-400 mt-2">View and manage submitted checklists.</p>
-              </div>
-            </Link>
-          )}
+          <Link to="/history">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+              <h3 className="text-2xl font-semibold text-purple-600 dark:text-purple-400">Checklist History</h3>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">View and manage submitted checklists.</p>
+            </div>
+          </Link>
         </div>
       </main>
     </div>
