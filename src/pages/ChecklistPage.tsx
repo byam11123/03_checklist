@@ -255,7 +255,7 @@ const ChecklistPage = () => {
 {checkingSubmission ? (
   <div className="text-center py-4">
     <p className="text-gray-600 dark:text-gray-400">
-      Checking submission status...
+      {t('checklist.checkingStatus')}
     </p>
   </div>
 ) : hasSubmittedToday && user.role === 'Officeboy' ? (
@@ -264,16 +264,16 @@ const ChecklistPage = () => {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
     <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-      Already Submitted Today
+      {t('checklist.alreadySubmitted')}
     </h3>
     <p className="text-gray-600 dark:text-gray-300 mb-4">
-      You have already submitted the {type} checklist for today.
+      {t('checklist.alreadySubmittedMsg', { type: type ? t(`type.${type}`) : '' })}
     </p>
     <button
       onClick={() => navigate('/dashboard')}
       className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
     >
-      Back to Dashboard
+      {t('checklist.backToDashboard')}
     </button>
   </div>
 ) : (

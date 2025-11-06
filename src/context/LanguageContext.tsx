@@ -5,7 +5,7 @@ type Language = 'en' | 'hi';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -23,12 +23,11 @@ const translations: Record<Language, Record<string, string>> = {
     'login.officeboy': 'Officeboy',
     'login.supervisor': 'Supervisor',
     'login.signIn': 'Sign In',
-    'login.language': 'Language',
-    'login.selectName': 'Select your name',
     'login.password': 'Password',
     'login.passwordPlaceholder': 'Enter your password',
     'login.signingIn': 'Signing In...',
-
+    'login.selectName': 'Select your name',
+    
     
     // Dashboard
     'dashboard.welcome': 'Welcome',
@@ -108,11 +107,10 @@ const translations: Record<Language, Record<string, string>> = {
     'login.officeboy': 'ऑफिस बॉय',
     'login.supervisor': 'सुपरवाइजर',
     'login.signIn': 'साइन इन करें',
-    'login.language': 'भाषा',
-    'login.selectName': 'अपना नाम चुनें',
     'login.password': 'पासवर्ड',
     'login.passwordPlaceholder': 'अपना पासवर्ड दर्ज करें',
     'login.signingIn': 'साइन इन हो रहा है...',
+    'login.selectName': 'अपना नाम चुनें',
     
     // Dashboard
     'dashboard.welcome': 'स्वागत है',
@@ -197,8 +195,14 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     setLanguageState(lang);
   };
 
-  const t = (key: string): string => {
-    return translations[language][key] || key;
+  const t = (key: string, values?: Record<string, string | number>): string => {
+    let translation = translations[language][key] || key;
+    if (values) {
+      Object.keys(values).forEach((valueKey) => {
+        translation = translation.replace(`{${valueKey}}`, String(values[valueKey]));
+      });
+    }
+    return translation;
   };
 
   return (
