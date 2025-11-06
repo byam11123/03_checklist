@@ -24,6 +24,10 @@ const translations: Record<Language, Record<string, string>> = {
     'login.supervisor': 'Supervisor',
     'login.signIn': 'Sign In',
     'login.language': 'Language',
+    'login.selectName': 'Select your name',
+    'login.password': 'Password',
+    'login.passwordPlaceholder': 'Enter your password',
+    'login.signingIn': 'Signing In...',
 
     
     // Dashboard
@@ -101,6 +105,10 @@ const translations: Record<Language, Record<string, string>> = {
     'login.supervisor': 'सुपरवाइजर',
     'login.signIn': 'साइन इन करें',
     'login.language': 'भाषा',
+    'login.selectName': 'अपना नाम चुनें',
+    'login.password': 'पासवर्ड',
+    'login.passwordPlaceholder': 'अपना पासवर्ड दर्ज करें',
+    'login.signingIn': 'साइन इन हो रहा है...',
     
     // Dashboard
     'dashboard.welcome': 'स्वागत है',

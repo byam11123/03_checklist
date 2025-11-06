@@ -220,15 +220,135 @@ function doPost(e) {
   }
 }
 
+// Function to authenticate user
+function authenticateUser(e) {
+  try {
+    var name = e.parameter.name;
+    var password = e.parameter.password;
+    
+    var ssId = '1Qr8c2_xdGeVVfVzXeZiJ5sXdO-IHBRjiZXgYT0a1MMU';
+    var ss = SpreadsheetApp.openById(ssId);
+    var loginSheet = ss.getSheetByName('login_details');
+    
+    if (!loginSheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          result: 'error', 
+          message: 'login_details sheet not found'
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Get all login data
+    var lastRow = loginSheet.getLastRow();
+    if (lastRow < 2) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          result: 'error', 
+          message: 'No users found'
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var data = loginSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    
+    // Find matching user
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      if (row[0] === name && row[1].toString() === password) {
+        // Authentication successful
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            result: 'success',
+            user: {
+              name: row[0],
+              role: row[2]
+            }
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    
+    // Authentication failed
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        result: 'error',
+        message: 'Invalid credentials'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('Error in authenticateUser:', error);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        result: 'error',
+        message: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Function to get list of all users (for dropdown)
+function getUserList(e) {
+  try {
+    var ssId = '1Qr8c2_xdGeVVfVzXeZiJ5sXdO-IHBRjiZXgYT0a1MMU';
+    var ss = SpreadsheetApp.openById(ssId);
+    var loginSheet = ss.getSheetByName('login_details');
+    
+    if (!loginSheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          result: 'error',
+          message: 'login_details sheet not found'
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var lastRow = loginSheet.getLastRow();
+    if (lastRow < 2) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          result: 'success',
+          users: []
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var data = loginSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    var userList = data.map(function(row) { return row[0]; });
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        result: 'success',
+        users: userList
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('Error in getUserList:', error);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        result: 'error',
+        message: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // Function to retrieve all checklist history
 function doGet(e) {
   if (e.parameter.action === 'getHistory') {
     return getChecklistHistory(e);
   } else if (e.parameter.action === 'getDetail' && e.parameter.id) {
     return getChecklistDetail(e);
+  } else if (e.parameter.action === 'getUserList') {
+    return getUserList(e);
+  } else if (e.parameter.action === 'authenticate') {
+    return authenticateUser(e);
   } else {
     // Show the default page
     var htmlOutput = HtmlService.createHtmlOutput(
+      '<html><body>' +
       '<h1>Checklist Data Logger</h1>' +
       '<p>Use POST requests to send checklist data.</p>' +
       '<p>Use GET requests with action parameter to retrieve data.</p>' +
@@ -236,10 +356,12 @@ function doGet(e) {
       '<ul>' +
       '<li>Get all history: ?action=getHistory</li>' +
       '<li>Get specific entry: ?action=getDetail&id=123</li>' +
-      '</ul>'
+      '<li>Get user list: ?action=getUserList</li>' +
+      '<li>Authenticate: ?action=authenticate&name=USERNAME&password=PASSWORD</li>' +
+      '</ul>' +
+      '</body></html>'
     );
     
-    // Set CORS headers
     htmlOutput.addMetaTag('Access-Control-Allow-Origin', '*');
     return htmlOutput;
   }
@@ -285,7 +407,202 @@ function parseCompletionPercentage(value) {
   return 0;
 }
 
-// Function to retrieve checklist history
+
+// Function to retrieve specific checklist details
+function getChecklistDetail(e) {
+  try {
+    var id = e.parameter.id;
+    var ssId = '1Qr8c2_xdGeVVfVzXeZiJ5sXdO-IHBRjiZXgYT0a1MMU';
+    var sheet = SpreadsheetApp.openById(ssId).getActiveSheet();
+    
+    var lastRow = sheet.getLastRow();
+    
+    if (lastRow < 2) {
+      // No data rows
+      return ContentService
+        .createTextOutput(JSON.stringify({error: 'No checklist found'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Parse the ID to get the row number
+    // The ID format from getChecklistHistory is: row number as string (e.g., "2", "3")
+    var rowNumber = parseInt(id);
+    
+    if (isNaN(rowNumber) || rowNumber < 2 || rowNumber > lastRow) {
+      return ContentService
+        .createTextOutput(JSON.stringify({error: 'Invalid checklist ID'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Get the specific row data
+    var row = sheet.getRange(rowNumber, 1, 1, 14).getValues()[0];
+    
+    // Parse tasks JSON from the Tasks column (index 6)
+    var tasks = [];
+    try {
+      if (row[6]) {
+        tasks = JSON.parse(row[6]);
+      }
+    } catch (parseError) {
+      console.error('Error parsing tasks JSON:', parseError);
+      tasks = [{taskName: 'Error parsing tasks', status: 'Error', remarks: parseError.message, supervisorRemarks: ''}];
+    }
+    
+    // Format dates properly
+    var rawDate = row[0];
+    var formattedDate = '';
+    if (rawDate instanceof Date) {
+      formattedDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "MM/dd/yyyy");
+    } else if (rawDate) {
+      formattedDate = rawDate.toString();
+    }
+    
+    var rawTime = row[1];
+    var formattedTime = '';
+    if (rawTime instanceof Date) {
+      formattedTime = Utilities.formatDate(rawTime, Session.getScriptTimeZone(), "HH:mm:ss");
+    } else if (rawTime) {
+      formattedTime = rawTime.toString();
+    }
+    
+    // Build the checklist entry object
+    var entry = {
+      id: id,
+      date: formattedDate,
+      time: formattedTime,
+      loginTime: (row[2] || '').toString(),
+      name: (row[3] || '').toString(),
+      role: (row[4] || '').toString(),
+      checklistType: (row[5] || '').toString(),
+      tasks: tasks,
+      completedTasks: parseInt(row[7]) || 0,
+      totalTasks: parseInt(row[8]) || 0,
+      completionPercentage: parseCompletionPercentage(row[9]),
+      supervisorName: (row[10] || '').toString(),
+      supervisorVerified: (row[11] || '').toString(),
+      supervisorReview: (row[12] || '').toString(),
+      verifiedAt: (row[13] || '').toString()
+    };
+    
+    var output = ContentService
+      .createTextOutput(JSON.stringify(entry))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+    return output;
+  } catch (error) {
+    console.error('Error in getChecklistDetail: ', error);
+    console.error('Stack trace: ', error.stack);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+// Since each row now represents a complete checklist submission, 
+// we don't need to group individual task entries.
+// We'll simply return the entries as they are.
+function groupEntriesByChecklist(entries) {
+  // Each entry is already a complete checklist submission with all tasks in the 'tasks' field
+  for (var i = 0; i < entries.length; i++) {
+    // Add a user field for compatibility with frontend
+    entries[i].user = entries[i].name;  // Map name to user
+    entries[i].userType = entries[i].role;  // Map role to userType
+    entries[i].supervisor = entries[i].supervisorName;  // Map supervisorName to supervisor
+    entries[i].supervisorTimestamp = entries[i].verifiedAt;  // Map verifiedAt to supervisorTimestamp
+  }
+  return entries;
+}
+
+// Function to create a new spreadsheet if needed (run once to initialize)
+function createSpreadsheet() {
+  try {
+    var ss = SpreadsheetApp.create('Checklist Master Data - ' + new Date().toISOString().split('T')[0]);
+    var sheet = ss.getActiveSheet();
+    
+    // Set up the master sheet headers
+    sheet.getRange(1, 1, 1, 14).setValues([[
+      'Date',
+      'Submitted At',
+      'Login Time',
+      'Name',
+      'Role',
+      'Checklist Type',
+      'Tasks',
+      'Completed Tasks',
+      'Total Tasks',
+      'Completion %',
+      'Supervisor Name',
+      'Supervisor Verified',
+      'Supervisor Review',
+      'Verified At'
+    ]]);
+    
+    // Format the header row with colors and styling
+    var headerRange = sheet.getRange(1, 1, 1, 14);
+    headerRange.setBackground('#4F81BD'); // Blue background
+    headerRange.setFontColor('#FFFFFF');   // White text
+    headerRange.setFontWeight('bold');     // Bold text
+    headerRange.setVerticalAlignment('middle');
+    headerRange.setHorizontalAlignment('center');
+    
+    // Set specific column widths for better readability
+    sheet.setColumnWidth(1, 120);  // Date
+    sheet.setColumnWidth(2, 120);  // Submitted At
+    sheet.setColumnWidth(3, 120);  // Login Time
+    sheet.setColumnWidth(4, 120);  // Name
+    sheet.setColumnWidth(5, 100);  // Role
+    sheet.setColumnWidth(6, 120);  // Checklist Type
+    sheet.setColumnWidth(7, 300);  // Tasks
+    sheet.setColumnWidth(8, 100);  // Completed Tasks
+    sheet.setColumnWidth(9, 100);  // Total Tasks
+    sheet.setColumnWidth(10, 100); // Completion %
+    sheet.setColumnWidth(11, 120); // Supervisor Name
+    sheet.setColumnWidth(12, 120); // Supervisor Verified
+    sheet.setColumnWidth(13, 150); // Supervisor Review
+    sheet.setColumnWidth(14, 120); // Verified At
+    
+    console.log('Master spreadsheet created with ID: ' + ss.getId());
+    Logger.log('Master spreadsheet created with ID: ' + ss.getId());
+    
+    // Return the ID for reference
+    return ss.getId();
+  } catch (error) {
+    console.error('Error creating spreadsheet: ', error);
+    console.error('Stack trace: ', error.stack);
+    return null;
+  }
+}
+
+// Test function to verify the script works
+function testFunction() {
+  var testRecord = {
+    user: 'Test User',
+    role: 'Officeboy',
+    checklistType: 'opening',
+    tasks: [
+      {taskName: 'Test Task 1', status: 'Completed', remarks: 'Test remark 1', supervisorRemarks: ''},
+      {taskName: 'Test Task 2', status: 'Pending', remarks: 'Test remark 2', supervisorRemarks: ''}
+    ],
+    timestamp: new Date().toISOString(),
+    completedTasks: 1,
+    totalTasks: 2,
+    completionPercentage: 50,
+    loginTime: new Date().toISOString(),
+    supervisor: '',
+    supervisorTimestamp: '',
+    supervisorRemarks: ''
+  };
+  
+  // Log the test data
+  console.log('Test data: ', testRecord);
+  Logger.log('Test data: ', testRecord);
+  
+  return testRecord;
+}
+
+// Function to retrieve all checklist history
 function getChecklistHistory(e) {
   try {
     var ssId = '1Qr8c2_xdGeVVfVzXeZiJ5sXdO-IHBRjiZXgYT0a1MMU';

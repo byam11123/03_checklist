@@ -12,16 +12,20 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<{ name: string; role: Role }>({ name: '', role: null });
+  const [user, setUser] = useState<{ name: string; role: Role }>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : { name: '', role: null };
+  });
 
   const login = (name: string, role: Role) => {
-    setUser({ name, role });
-    // In a real app, you'd also save this to localStorage
+    const newUser = { name, role };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logout = () => {
     setUser({ name: '', role: null });
-    // And clear it from localStorage
+    localStorage.removeItem('user');
   };
 
   return (
