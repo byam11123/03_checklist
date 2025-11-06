@@ -13,19 +13,37 @@ const HistoryPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadChecklists = async () => {
-      try {
-        console.log('Attempting to load checklist history...');
-        const data = await checklistService.fetchChecklistHistory();
-        console.log('Received data:', data);
-        // Filter for office boy checklists only if user is a supervisor
-        if (user.role === 'Supervisor') {
-          setChecklists(data);
-        } else {
-          // For office boys, show only their own checklists
-          setChecklists(data.filter(entry => entry.name === user.name));
-        }
-        setLoading(false);
+  const loadChecklists = async () => {
+  try {
+    console.log('Attempting to load checklist history...');
+    const data = await checklistService.fetchChecklistHistory();
+    console.log('Received data:', data);
+    
+    // Sort by date descending (latest first)
+    const sortedData = data.sort((a, b) => {
+      // Parse dates for comparison
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      // If dates are same, sort by time
+      if (dateA.getTime() === dateB.getTime()) {
+        const timeA = a.time || '00:00:00';
+        const timeB = b.time || '00:00:00';
+        return timeB.localeCompare(timeA); // Descending
+      }
+      
+      return dateB - dateA; // Descending (latest first)
+    });
+    
+    // Filter for office boy checklists only if user is a supervisor
+    if (user.role === 'Supervisor') {
+      setChecklists(sortedData);
+    } else {
+      // For office boys, show only their own checklists
+      setChecklists(sortedData.filter(entry => entry.name === user.name));
+    }
+    setLoading(false);
+
       } catch (err: any) {
         const errorMessage = err.message || 'Failed to load checklist history';
         setError(errorMessage);

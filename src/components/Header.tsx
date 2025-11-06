@@ -21,14 +21,14 @@ const Header = () => {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Daily Checklist</h1>
         <div className="flex items-center space-x-4">
-          {user?.role === 'Supervisor' && location.pathname !== '/history' && (
+          {/* {user?.role === 'Supervisor' && location.pathname !== '/history' && (
             <button
               onClick={handleHistoryClick}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               History
             </button>
-          )}
+          )} */}
           <div className="text-right">
             <p className="font-semibold text-gray-800 dark:text-gray-200">{user.name}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{user.role}</p>

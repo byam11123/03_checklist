@@ -293,34 +293,6 @@ export const checklistService = {
         throw error instanceof Error ? error : new Error('Failed to fetch checklist history. Please check your Google Apps Script configuration.');
       }
     }
-
-    try {
-      // Call your Google Apps Script endpoint to get the real data
-      const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
-      
-      // With no-cors, we can't check the response status, but we can get the text
-      const responseText = await response.text();
-      
-      // Try to parse the JSON response
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Error parsing response from Google Apps Script:', responseText);
-        throw new Error(`Invalid response from Google Apps Script: ${responseText}`);
-      }
-      
-      // Check if the response contains an error
-      if (data.error) {
-        console.error('Error from Google Apps Script:', data.error);
-        throw new Error(`Google Apps Script error: ${data.error}`);
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching checklist history:', error);
-      throw error;
-    }
   },
 
   async fetchChecklistDetail(id: string): Promise<ChecklistEntry | null> {
@@ -329,7 +301,17 @@ export const checklistService = {
     if (!VITE_APPSCRIPT_URL) {
       console.warn('VITE_APPSCRIPT_URL is not set. Using mock data.');
       const entries = await this.fetchChecklistHistory();
-      return entries.find(entry => entry.id === id) || null;
+      
+      // For mock data, we might get an ID that's not in the expected format
+      // Try to find by exact ID match first
+      const exactMatch = entries.find(entry => entry.id === id);
+      if (exactMatch) {
+        return exactMatch;
+      }
+      
+      // If there's no exact match, return the first entry as fallback
+      // Or look for an entry that might match based on partial information
+      return entries.length > 0 ? entries[0] : null;
     }
 
     try {

@@ -82,37 +82,64 @@ function doPost(e) {
     var tasksJson = JSON.stringify(data.tasks);
     
     if (data.role === 'Supervisor' && data.checklistId) {
-      // Supervisor is updating an existing checklist - update only supervisor columns
-      // The checklistId from our frontend corresponds to the row index (id = i + 1 from getChecklistHistory)
-      var updateRow = parseInt(data.checklistId);
-      
-      // Verify that we're not updating the header row
-      if (updateRow < 2) {
-        console.log('Error: Attempting to update header row. checklistId:', data.checklistId, 'updateRow:', updateRow);
-        var output = ContentService
-          .createTextOutput(JSON.stringify({result: 'error', message: 'Invalid checklist ID for update'}))
-          .setMimeType(ContentService.MimeType.JSON);
-        return output;
+  // Supervisor is updating an existing checklist - update supervisor columns AND tasks
+  var updateRow = parseInt(data.checklistId);
+  
+  // Verify that we're not updating the header row
+  if (updateRow < 2) {
+    console.log('Error: Attempting to update header row. checklistId:', data.checklistId, 'updateRow:', updateRow);
+    var output = ContentService
+      .createTextOutput(JSON.stringify({result: 'error', message: 'Invalid checklist ID for update'}))
+      .setMimeType(ContentService.MimeType.JSON);
+    return output;
+  }
+  
+  // Get current tasks from sheet
+  var currentTasksJson = sheet.getRange(updateRow, 7).getValue(); // Column G (Tasks)
+  var currentTasks = [];
+  
+  try {
+    if (currentTasksJson) {
+      currentTasks = JSON.parse(currentTasksJson);
+    }
+  } catch (e) {
+    console.error('Error parsing existing tasks:', e);
+  }
+  
+  // Update tasks with supervisor remarks from incoming data
+  if (data.tasks && data.tasks.length > 0) {
+    // Merge supervisor remarks into existing tasks
+    for (var i = 0; i < currentTasks.length; i++) {
+      if (data.tasks[i] && data.tasks[i].supervisorRemarks) {
+        currentTasks[i].supervisorRemarks = data.tasks[i].supervisorRemarks;
       }
-      
-      // Update only supervisor-related columns
-      sheet.getRange(updateRow, 11, 1, 4).setValues([[  // Starting from column K (Supervisor Name)
-        data.supervisor || sheet.getRange(updateRow, 11).getValue(),                    // Supervisor Name (K)
-        'Yes',                                                                         // Supervisor Verified (L) - when supervisor saves, mark as verified
-        data.supervisorRemarks || sheet.getRange(updateRow, 13).getValue(),             // Supervisor Review (M)
-        new Date().toLocaleString()                                                    // Verified At (N)
-      ]]);
-      
-      console.log('Successfully updated supervisor columns for checklist at row', updateRow);
-      
-      // Create response
-      var output = ContentService
-        .createTextOutput(JSON.stringify({result: 'success', message: 'Supervisor verification updated successfully', updatedRow: updateRow}))
-        .setMimeType(ContentService.MimeType.JSON);
-      
-      // Note: Google Apps Script handles CORS automatically for published web apps
-      return output;
-    } else if (data.role === 'Officeboy') {
+    }
+  }
+  
+  // Convert updated tasks back to JSON
+  var updatedTasksJson = JSON.stringify(currentTasks);
+  
+  // Update Tasks column (G) with supervisor remarks included
+  sheet.getRange(updateRow, 7).setValue(updatedTasksJson);
+  
+  // Update supervisor-related columns (K, L, M, N)
+  sheet.getRange(updateRow, 11, 1, 4).setValues([[
+    data.supervisor || sheet.getRange(updateRow, 11).getValue(), // Supervisor Name (K)
+    'Yes', // Supervisor Verified (L)
+    data.supervisorRemarks || sheet.getRange(updateRow, 13).getValue(), // Supervisor Review (M)
+    new Date().toLocaleString() // Verified At (N)
+  ]]);
+  
+  console.log('Successfully updated supervisor columns and tasks for checklist at row', updateRow);
+  
+  // Create response
+  var output = ContentService
+    .createTextOutput(JSON.stringify({result: 'success', message: 'Supervisor verification updated successfully', updatedRow: updateRow}))
+    .setMimeType(ContentService.MimeType.JSON);
+  
+  return output;
+}
+ else if (data.role === 'Officeboy') {
       // Office Boys: prevent duplicate submissions for the same checklist type in a day
       var today = new Date().toLocaleDateString();
       var existingEntry = false;
@@ -324,84 +351,89 @@ function getChecklistDetail(e) {
     var sheet = SpreadsheetApp.openById(ssId).getActiveSheet();
     
     var lastRow = sheet.getLastRow();
-    var values = [];
     
-    if (lastRow > 1) {
-      values = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+    if (lastRow < 2) {
+      // No data rows
+      return ContentService
+        .createTextOutput(JSON.stringify({error: 'No checklist found'}))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
-    // Find entries matching the specified checklist submission
-    // In a real implementation, you would match by a more specific identifier
-    var entries = [];
-    for (var i = 0; i < values.length; i++) {
-      var row = values[i];
-      if (i + 1 === parseInt(id) || // Using row index as ID
-          row[3] + '_' + row[0] + '_' + row[5] === id) { // name_date_checklistType
-        var tasks = [];
-        try {
-          // Parse the tasks JSON from the Tasks column (index 6)
-          if (row[6]) {
-            tasks = JSON.parse(row[6]);
-          }
-        } catch (e) {
-          console.error('Error parsing tasks JSON:', e);
-          // If parsing fails, create a basic task object
-          tasks = [{taskName: 'Error parsing tasks', status: 'Error', remarks: e.message, supervisorRemarks: ''}];
-        }
-        
-        // Format dates properly from Google Sheets for detail view
-        var rawDateDetail = row[0];
-        var formattedDateDetail = '';
-        if (rawDateDetail instanceof Date) {
-          formattedDateDetail = Utilities.formatDate(rawDateDetail, Session.getScriptTimeZone(), "MM/dd/yyyy");
-        } else if (rawDateDetail) {
-          formattedDateDetail = rawDateDetail.toString();
-        }
-        
-        var rawTimeDetail = row[1];
-        var formattedTimeDetail = '';
-        if (rawTimeDetail instanceof Date) {
-          formattedTimeDetail = Utilities.formatDate(rawTimeDetail, Session.getScriptTimeZone(), "HH:mm:ss");
-        } else if (rawTimeDetail) {
-          formattedTimeDetail = rawTimeDetail.toString();
-        }
-
-        entries.push({
-          id: (i + 2).toString(), // +2 because data rows start at index 2 in sheet (after header)
-          date: formattedDateDetail,
-          time: formattedTimeDetail,
-          loginTime: (row[2] || '').toString(),
-          name: (row[3] || '').toString(),  // Original field name
-          role: (row[4] || '').toString(),  // Original field name
-          checklistType: (row[5] || '').toString(),
-          tasks: tasks,
-          completedTasks: parseInt(row[7]) || 0,
-          totalTasks: parseInt(row[8]) || 0,
-          completionPercentage: parseInt(row[9]) || 0,
-          supervisorName: (row[10] || '').toString(),  // Original field name
-          supervisorVerified: (row[11] || '').toString(),
-          supervisorReview: (row[12] || '').toString(),
-          verifiedAt: (row[13] || '').toString()  // Original field name
-        });
+    // Parse the ID to get the row number
+    // The ID format from getChecklistHistory is: row number as string (e.g., "2", "3")
+    var rowNumber = parseInt(id);
+    
+    if (isNaN(rowNumber) || rowNumber < 2 || rowNumber > lastRow) {
+      return ContentService
+        .createTextOutput(JSON.stringify({error: 'Invalid checklist ID'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Get the specific row data
+    var row = sheet.getRange(rowNumber, 1, 1, 14).getValues()[0];
+    
+    // Parse tasks JSON from the Tasks column (index 6)
+    var tasks = [];
+    try {
+      if (row[6]) {
+        tasks = JSON.parse(row[6]);
       }
+    } catch (parseError) {
+      console.error('Error parsing tasks JSON:', parseError);
+      tasks = [{taskName: 'Error parsing tasks', status: 'Error', remarks: parseError.message, supervisorRemarks: ''}];
     }
+    
+    // Format dates properly
+    var rawDate = row[0];
+    var formattedDate = '';
+    if (rawDate instanceof Date) {
+      formattedDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "MM/dd/yyyy");
+    } else if (rawDate) {
+      formattedDate = rawDate.toString();
+    }
+    
+    var rawTime = row[1];
+    var formattedTime = '';
+    if (rawTime instanceof Date) {
+      formattedTime = Utilities.formatDate(rawTime, Session.getScriptTimeZone(), "HH:mm:ss");
+    } else if (rawTime) {
+      formattedTime = rawTime.toString();
+    }
+    
+    // Build the checklist entry object
+    var entry = {
+      id: id,
+      date: formattedDate,
+      time: formattedTime,
+      loginTime: (row[2] || '').toString(),
+      name: (row[3] || '').toString(),
+      role: (row[4] || '').toString(),
+      checklistType: (row[5] || '').toString(),
+      tasks: tasks,
+      completedTasks: parseInt(row[7]) || 0,
+      totalTasks: parseInt(row[8]) || 0,
+      completionPercentage: parseInt(row[9]) || 0,
+      supervisorName: (row[10] || '').toString(),
+      supervisorVerified: (row[11] || '').toString(),
+      supervisorReview: (row[12] || '').toString(),
+      verifiedAt: (row[13] || '').toString()
+    };
     
     var output = ContentService
-      .createTextOutput(JSON.stringify(entries))
+      .createTextOutput(JSON.stringify(entry))
       .setMimeType(ContentService.MimeType.JSON);
     
-    // Note: Google Apps Script handles CORS automatically for published web apps
     return output;
   } catch (error) {
     console.error('Error in getChecklistDetail: ', error);
-    var output = ContentService
+    console.error('Stack trace: ', error.stack);
+    
+    return ContentService
       .createTextOutput(JSON.stringify({error: error.toString()}))
       .setMimeType(ContentService.MimeType.JSON);
-    
-    // Note: Google Apps Script handles CORS automatically for published web apps
-    return output;
   }
 }
+
 
 // Since each row now represents a complete checklist submission, 
 // we don't need to group individual task entries.
