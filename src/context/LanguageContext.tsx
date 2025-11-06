@@ -73,6 +73,7 @@ const translations: Record<Language, Record<string, string>> = {
     'history.backToDashboard': 'Back to Dashboard',
     'history.searchByName': 'Search by name...',
     'history.allStatuses': 'All Statuses',
+    'history.export': 'Export to CSV',
     
     // History Detail Page
     'detail.checklistDetails': 'Checklist Details',
@@ -161,6 +162,7 @@ const translations: Record<Language, Record<string, string>> = {
     'history.backToDashboard': 'डैशबोर्ड पर वापस जाएं',
     'history.searchByName': 'नाम से खोजें...',
     'history.allStatuses': 'सभी स्थितियाँ',
+    'history.export': 'सीएसवी में निर्यात करें',
     
     // History Detail Page
     'detail.checklistDetails': 'चेकलिस्ट विवरण',

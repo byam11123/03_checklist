@@ -82,6 +82,40 @@ const HistoryPage = () => {
     navigate(`/history/${id}`);
   };
 
+  const handleExport = () => {
+    const headers = [
+      "ID", "Date", "Time", "Name", "Role", "Checklist Type", 
+      "Completed Tasks", "Total Tasks", "Completion %", "Supervisor Name", 
+      "Supervisor Verified", "Verified At"
+    ];
+
+    const rows = filteredChecklists.map(entry => [
+      entry.id,
+      entry.date,
+      entry.time,
+      entry.name,
+      entry.role,
+      entry.checklistType,
+      entry.completedTasks,
+      entry.totalTasks,
+      entry.completionPercentage,
+      entry.supervisorName,
+      entry.supervisorVerified,
+      entry.verifiedAt
+    ].join(','));
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'checklist-history.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -129,6 +163,12 @@ const HistoryPage = () => {
             className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
           >
             {t('history.backToDashboard')}
+          </button>
+          <button 
+            onClick={handleExport}
+            className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700"
+          >
+            {t('history.export')}
           </button>
         </div>
 
