@@ -42,6 +42,7 @@ const HistoryDetailPage = () => {
             totalTasks: 0,
             completionPercentage: 0,
             supervisorName: '',
+            supervisorVerified: '',
             verifiedAt: ''
           });
         }

@@ -19,5 +19,6 @@ export interface ChecklistEntry {
   totalTasks: number;
   completionPercentage: number;
   supervisorName: string;
+  supervisorVerified: string;
   verifiedAt: string;
 }

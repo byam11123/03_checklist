@@ -207,6 +207,7 @@ export const checklistService = {
               totalTasks: 10,
               completionPercentage: 100,
               supervisorName: '',
+              supervisorVerified: '',
               verifiedAt: ''
             },
             {
@@ -232,6 +233,7 @@ export const checklistService = {
               totalTasks: 10,
               completionPercentage: 100,
               supervisorName: 'Supervisor Bob',
+              supervisorVerified: 'Yes',
               verifiedAt: '11/03/2025, 19:15:20'
             },
             {
@@ -257,6 +259,7 @@ export const checklistService = {
               totalTasks: 10,
               completionPercentage: 90,
               supervisorName: 'Supervisor Bob',
+              supervisorVerified: 'Yes',
               verifiedAt: '11/02/2025, 10:30:15'
             }
           ];
