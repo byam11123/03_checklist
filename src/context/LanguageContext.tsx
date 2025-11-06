@@ -71,6 +71,8 @@ const translations: Record<Language, Record<string, string>> = {
     'history.viewDetails': 'View Details',
     'history.loading': 'Loading checklists...',
     'history.backToDashboard': 'Back to Dashboard',
+    'history.searchByName': 'Search by name...',
+    'history.allStatuses': 'All Statuses',
     
     // History Detail Page
     'detail.checklistDetails': 'Checklist Details',
@@ -157,6 +159,8 @@ const translations: Record<Language, Record<string, string>> = {
     'history.viewDetails': 'विवरण देखें',
     'history.loading': 'चेकलिस्ट लोड हो रही हैं...',
     'history.backToDashboard': 'डैशबोर्ड पर वापस जाएं',
+    'history.searchByName': 'नाम से खोजें...',
+    'history.allStatuses': 'सभी स्थितियाँ',
     
     // History Detail Page
     'detail.checklistDetails': 'चेकलिस्ट विवरण',

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { checklistService } from '../api/checklistService';
 import type { ChecklistEntry } from '../types/checklist';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import HistoryFilter from '../components/HistoryFilter';
 
 const HistoryPage = () => {
   const { user } = useUser();
@@ -13,6 +14,9 @@ const HistoryPage = () => {
   const [checklists, setChecklists] = useState<ChecklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
   useEffect(() => {
   const loadChecklists = async () => {
@@ -56,6 +60,23 @@ const HistoryPage = () => {
 
     loadChecklists();
   }, [user]);
+
+  const filteredChecklists = useMemo(() => {
+    return checklists.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const startDate = dateRange.start ? new Date(dateRange.start) : null;
+      const endDate = dateRange.end ? new Date(dateRange.end) : null;
+
+      if (startDate && entryDate < startDate) return false;
+      if (endDate && entryDate > endDate) return false;
+
+      if (filterStatus !== 'all' && (filterStatus === 'reviewed' ? !entry.supervisorVerified : entry.supervisorVerified)) return false;
+
+      if (searchTerm && !entry.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+
+      return true;
+    });
+  }, [checklists, searchTerm, filterStatus, dateRange]);
 
   const handleViewDetail = (id: string) => {
     navigate(`/history/${id}`);
@@ -110,14 +131,23 @@ const HistoryPage = () => {
             {t('history.backToDashboard')}
           </button>
         </div>
+
+        <HistoryFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+        />
         
-        {checklists.length === 0 ? (
+        {filteredChecklists.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400">{t('history.noChecklists')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {checklists.map((entry) => (
+            {filteredChecklists.map((entry) => (
               <div 
                 key={entry.id} 
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
