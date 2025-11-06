@@ -58,16 +58,7 @@ const ChecklistPage = () => {
         console.log(`Checking for existing ${type} checklist submission for ${user.name} on ${today}`);
         console.log(`Storage key: ${storageKey}`);
         
-        // Check localStorage first (quick check)
-        const localSubmission = localStorage.getItem(storageKey);
-        if (localSubmission) {
-          console.log(`Found local submission for ${type} checklist`);
-          setHasSubmittedToday(true);
-          setCheckingSubmission(false);
-          return;
-        }
-
-        // Also check from server (more reliable)
+        // First, check server data (primary source of truth)
         const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
         if (VITE_APPSCRIPT_URL) {
           try {
@@ -79,8 +70,7 @@ const ChecklistPage = () => {
               data = JSON.parse(responseText);
             } catch (parseError) {
               console.error('Error parsing server response:', responseText);
-              // If there's an error parsing the response, but we have network access, 
-              // we'll continue with the submission to be safe
+              // If there's an error parsing the response, we should allow submission
               setCheckingSubmission(false);
               return;
             }
@@ -109,12 +99,25 @@ const ChecklistPage = () => {
               console.log(`Saved submission to localStorage with key: ${storageKey}`);
             } else {
               console.log(`No server submission found for ${type} checklist on ${today}`);
+              // If no server submission found, also clear localStorage to avoid stale data
+              localStorage.removeItem(storageKey);
             }
           } catch (networkError) {
             console.error('Network error while checking submission status:', networkError);
             // If there's a network error, we can't verify submission status,
             // so we'll proceed to let the user submit (to be safe)
             console.log('Network error occurred, proceeding with checklist access');
+          }
+        } else {
+          // When no server URL is configured, only use localStorage
+          // This is the fallback mode when Google Sheets integration isn't set up
+          console.log('No server URL configured, checking localStorage only');
+          const localSubmission = localStorage.getItem(storageKey);
+          if (localSubmission) {
+            console.log(`Found local submission for ${type} checklist`);
+            setHasSubmittedToday(true);
+          } else {
+            console.log(`No local submission found for ${type} checklist`);
           }
         }
       } catch (error) {
