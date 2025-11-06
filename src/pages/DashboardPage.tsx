@@ -1,12 +1,33 @@
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import { checklistService } from '../api/checklistService';
+import type { ChecklistEntry } from '../types/checklist';
+import DashboardStats from '../components/DashboardStats';
 
 const DashboardPage = () => {
   const { user } = useUser();
   const { t } = useLanguage();
+  const [entries, setEntries] = useState<ChecklistEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const history = await checklistService.fetchChecklistHistory();
+        setEntries(history);
+      } catch (error) {
+        console.error('Error fetching checklist history:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -16,7 +37,11 @@ const DashboardPage = () => {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">{t('dashboard.welcome')}, {user.name}!</h2>
           <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.openingDesc')}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+
+        {/* Dashboard Stats */}
+        <DashboardStats entries={entries} isLoading={isLoading} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mt-8">
           {/* Opening and Closing Checklist Links - Only show for Office Boy */}
           {user.role === 'Officeboy' && (
             <>

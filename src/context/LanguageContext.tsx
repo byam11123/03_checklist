@@ -40,6 +40,9 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.supervisorTitle': 'Review Submissions',
     'dashboard.supervisorDesc': 'Go to Checklist History to review and verify office boy submissions',
     'dashboard.logout': 'Logout',
+    'dashboard.totalSubmissions': 'Total Submissions',
+    'dashboard.pendingReviews': 'Pending Reviews',
+    'dashboard.avgCompletion': 'Avg. Completion',
     
     // Checklist Page
     'checklist.opening': 'Opening Checklist',
@@ -123,6 +126,9 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.supervisorTitle': 'सबमिशन की समीक्षा करें',
     'dashboard.supervisorDesc': 'ऑफिस बॉय के सबमिशन को वेरिफाई करने के लिए चेकलिस्ट इतिहास पर जाएं',
     'dashboard.logout': 'लॉगआउट',
+    'dashboard.totalSubmissions': 'कुल सबमिशन',
+    'dashboard.pendingReviews': 'लंबित समीक्षाएं',
+    'dashboard.avgCompletion': 'औसत समापन',
     
     // Checklist Page
     'checklist.opening': 'ओपनिंग चेकलिस्ट',
