@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ChecklistPage from './pages/ChecklistPage';
 import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
+import SummaryReportPage from './pages/SummaryReportPage';
 
 // A wrapper to protect routes that require authentication
 import type { ReactElement } from 'react';
@@ -50,6 +51,10 @@ const AppRoutes = () => {
           <Route 
             path="/history/:id" 
             element={<ProtectedRoute><HistoryDetailPage /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/summary" 
+            element={<ProtectedRoute><SummaryReportPage /></ProtectedRoute>} 
           />
         </Routes>
       </div>

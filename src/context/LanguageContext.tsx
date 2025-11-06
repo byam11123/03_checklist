@@ -37,6 +37,8 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.closingDesc': 'Complete end-of-day tasks',
     'dashboard.viewHistory': 'View Checklist History',
     'dashboard.historyDesc': 'Review past submissions',
+    'dashboard.summaryReport': 'Summary Report',
+    'dashboard.summaryReportDesc': 'View weekly and monthly summary reports',
     'dashboard.supervisorTitle': 'Review Submissions',
     'dashboard.supervisorDesc': 'Go to Checklist History to review and verify office boy submissions',
     'dashboard.logout': 'Logout',
@@ -74,6 +76,11 @@ const translations: Record<Language, Record<string, string>> = {
     'history.searchByName': 'Search by name...',
     'history.allStatuses': 'All Statuses',
     'history.export': 'Export to CSV',
+
+    // Summary Report Page
+    'summary.title': 'Summary Report',
+    'summary.weekly': 'Weekly',
+    'summary.monthly': 'Monthly',
     
     // History Detail Page
     'detail.checklistDetails': 'Checklist Details',
@@ -129,6 +136,8 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.closingDesc': 'दिन के अंत के कार्य पूरा करें',
     'dashboard.viewHistory': 'चेकलिस्ट इतिहास देखें',
     'dashboard.historyDesc': 'पिछले सबमिशन देखें',
+    'dashboard.summaryReport': 'सारांश रिपोर्ट',
+    'dashboard.summaryReportDesc': 'साप्ताहिक और मासिक सारांश रिपोर्ट देखें',
     'dashboard.supervisorTitle': 'सबमिशन की समीक्षा करें',
     'dashboard.supervisorDesc': 'ऑफिस बॉय के सबमिशन को वेरिफाई करने के लिए चेकलिस्ट इतिहास पर जाएं',
     'dashboard.logout': 'लॉगआउट',
@@ -166,6 +175,11 @@ const translations: Record<Language, Record<string, string>> = {
     'history.searchByName': 'नाम से खोजें...',
     'history.allStatuses': 'सभी स्थितियाँ',
     'history.export': 'सीएसवी में निर्यात करें',
+
+    // Summary Report Page
+    'summary.title': 'सारांश रिपोर्ट',
+    'summary.weekly': 'साप्ताहिक',
+    'summary.monthly': 'मासिक',
     
     // History Detail Page
     'detail.checklistDetails': 'चेकलिस्ट विवरण',

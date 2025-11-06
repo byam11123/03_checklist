@@ -151,25 +151,29 @@ const HistoryPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-            {user.role === 'Supervisor' ? t('history.title') : t('history.myHistory')}
-          </h2>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-          >
-            {t('history.backToDashboard')}
-          </button>
-          <button 
-            onClick={handleExport}
-            className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700"
-          >
-            {t('history.export')}
-          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {user.role === 'Supervisor' ? t('history.title') : t('history.myHistory')}
+            </h1>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              {t('history.backToDashboard')}
+            </button>
+            <button 
+              onClick={handleExport}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              {t('history.export')}
+            </button>
+          </div>
         </div>
 
         <HistoryFilter
@@ -182,7 +186,7 @@ const HistoryPage = () => {
         />
         
         {filteredChecklists.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-600 dark:text-gray-400">{t('history.noChecklists')}</p>
           </div>
         ) : (
@@ -190,39 +194,42 @@ const HistoryPage = () => {
             {filteredChecklists.map((entry) => (
               <div 
                 key={entry.id} 
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-blue-500"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                       {t(`type.${entry.checklistType}`)} {t('detail.checklistDetails')}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                       {entry.name} • {entry.date} • {entry.time}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {entry.completedTasks}/{entry.totalTasks} {t('history.tasksCompleted')} ({entry.completionPercentage}%)
-                    </p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                     entry.completionPercentage === 100 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                      : entry.completionPercentage >= 80
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                   }`}>
-                    {t(`type.${entry.checklistType}`)}
+                    {entry.completionPercentage}%
                   </span>
                 </div>
                 
                 <div className="mt-4">
-                  <div className="flex items-center text-sm">
+                  <div className="flex items-center text-sm mb-2">
                     <span className="text-gray-600 dark:text-gray-400">{t('history.status')}:</span>
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${entry.supervisorName ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                    <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
+                      entry.supervisorName 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' 
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    }`}>
                       {entry.supervisorName ? t('history.reviewed') : t('history.pendingReview')}
                     </span>
                   </div>
                   
                   {entry.supervisorName && (
-                    <div className="mt-2 text-sm">
+                    <div className="text-sm">
                       <p className="text-gray-600 dark:text-gray-400">
                         <span className="font-medium">{t('history.reviewedBy')}:</span> {entry.supervisorName}
                       </p>
@@ -235,10 +242,10 @@ const HistoryPage = () => {
                   )}
                 </div>
                 
-                <div className="mt-6 flex space-x-3">
+                <div className="mt-6">
                   <button
                     onClick={() => handleViewDetail(entry.id)}
-                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     {user.role === 'Supervisor' ? t('checklist.submitReview') : t('history.viewDetails')}
                   </button>
