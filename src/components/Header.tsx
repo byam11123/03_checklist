@@ -38,7 +38,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-md dark:bg-gray-800">
+    <header className="bg-white shadow-md dark:bg-gray-800 no-print">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{t('login.title')}</h1>

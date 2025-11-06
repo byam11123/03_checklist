@@ -14,7 +14,6 @@ const HistoryDetailPage = () => {
   const [checklist, setChecklist] = useState<ChecklistEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
 
   useEffect(() => {
     const loadChecklistDetail = async () => {
@@ -72,49 +71,6 @@ const HistoryDetailPage = () => {
     });
   };
 
-  const handleSubmitReview = async () => {
-    if (!checklist || !id) return;
-
-    try {
-      setIsReviewing(true);
-      
-      // Prepare the updated checklist data
-      const updatedData = {
-        checklistId: id,  // Ensure checklistId is passed for updating
-        role: 'Supervisor',  // Indicate this is a supervisor update
-        supervisor: user.name, // Use the field name expected by Google Apps Script
-        supervisorName: user.name, // Also include the field name used in our types
-        supervisorRemarks: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Use field name expected by script
-        supervisorReview: checklist.tasks.some(task => task.supervisorRemarks) ? 'Completed' : '', // Also include field for our types
-        verifiedAt: new Date().toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        }).replace(',', ''), // Include field for our types
-        tasks: checklist.tasks // Include tasks in case they need to be updated
-      };
-
-      // Update the checklist in the backend
-      await checklistService.updateChecklist(id, updatedData);
-      
-      // Refresh the checklist data
-      const updatedChecklist = await checklistService.fetchChecklistDetail(id);
-      if (updatedChecklist) {
-        setChecklist(updatedChecklist);
-      }
-      
-      alert('Review submitted successfully!');
-    } catch (err) {
-      console.error('Error submitting review:', err);
-      alert('Error submitting review');
-    } finally {
-      setIsReviewing(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -155,14 +111,23 @@ const HistoryDetailPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 printable-area">
+        <div className="print-only print-header">
+          <h1>{t(`type.${checklist.checklistType}`)} {t('detail.checklistDetails')}</h1>
+        </div>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
             {t(`type.${checklist.checklistType}`)} {t('detail.checklistDetails')}
           </h2>
           <button
+            onClick={() => window.print()}
+            className="px-4 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700 no-print"
+          >
+            {t('detail.print')}
+          </button>
+          <button
             onClick={() => navigate('/history')}
-            className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+            className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 no-print"
           >
             {t('detail.backToHistory')}
           </button>
@@ -267,17 +232,33 @@ const HistoryDetailPage = () => {
             ))}
           </div>
           
-          {user.role === 'Supervisor' && (
-            <div className="mt-8 flex justify-end">
-              <button
-                onClick={handleSubmitReview}
-                disabled={isReviewing}
-                className="px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-              >
-                {isReviewing ? t('checklist.reviewing') : t('checklist.submitReview')}
-              </button>
+          <div className="mt-8 flex justify-end">
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700 no-print"
+            >
+              {t('detail.print')}
+            </button>
+            <button
+              onClick={() => navigate('/history')}
+              className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 no-print"
+            >
+              {t('detail.backToHistory')}
+            </button>
+          </div>
+        </div>
+
+        <div className="print-only mt-8">
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <p className="font-semibold">{t('detail.employeeSignature')}</p>
+              <div className="border-t border-gray-400 mt-8"></div>
             </div>
-          )}
+            <div>
+              <p className="font-semibold">{t('detail.supervisorSignature')}</p>
+              <div className="border-t border-gray-400 mt-8"></div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

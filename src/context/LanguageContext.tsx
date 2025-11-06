@@ -93,6 +93,9 @@ const translations: Record<Language, Record<string, string>> = {
     'detail.backToHistory': 'Back to History',
     'detail.loading': 'Loading checklist details...',
     'detail.notFound': 'Checklist not found',
+    'detail.print': 'Print',
+    'detail.employeeSignature': 'Employee Signature',
+    'detail.supervisorSignature': 'Supervisor Signature',
     
     // Checklist Types
     'type.opening': 'Opening',
@@ -182,6 +185,9 @@ const translations: Record<Language, Record<string, string>> = {
     'detail.backToHistory': 'इतिहास पर वापस जाएं',
     'detail.loading': 'चेकलिस्ट विवरण लोड हो रहा है...',
     'detail.notFound': 'चेकलिस्ट नहीं मिली',
+    'detail.print': 'प्रिंट',
+    'detail.employeeSignature': 'कर्मचारी के हस्ताक्षर',
+    'detail.supervisorSignature': 'सुपरवाइजर के हस्ताक्षर',
     
     // Checklist Types
     'type.opening': 'ओपनिंग',
