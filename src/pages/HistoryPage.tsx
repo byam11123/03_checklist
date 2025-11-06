@@ -129,7 +129,7 @@ const HistoryPage = () => {
                       {entry.name} • {entry.date} • {entry.time}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {entry.completedTasks}/{entry.totalTasks} tasks completed ({entry.completionPercentage}%)
+                      {entry.completedTasks}/{entry.totalTasks} Tasks completed ({entry.completionPercentage}%)
                     </p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
