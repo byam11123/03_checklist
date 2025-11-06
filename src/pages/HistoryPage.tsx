@@ -32,7 +32,7 @@ const HistoryPage = () => {
         return timeB.localeCompare(timeA); // Descending
       }
       
-      return dateB - dateA; // Descending (latest first)
+      return dateB.getTime() - dateA.getTime(); // Descending (latest first)
     });
     
     // Filter for office boy checklists only if user is a supervisor
