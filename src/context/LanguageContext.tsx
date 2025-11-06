@@ -51,6 +51,10 @@ const translations: Record<Language, Record<string, string>> = {
     'checklist.submitReview': 'Submit Review',
     'checklist.submitting': 'Submitting...',
     'checklist.reviewing': 'Reviewing...',
+    'checklist.alreadySubmitted': 'Already Submitted Today',
+    'checklist.alreadySubmittedMsg': 'You have already submitted the {type} checklist for today.',
+    'checklist.checkingStatus': 'Checking submission status...',
+    'checklist.backToDashboard': 'Back to Dashboard',
     
     // History Page
     'history.title': 'Office Boy Checklists',
@@ -131,6 +135,10 @@ const translations: Record<Language, Record<string, string>> = {
     'checklist.submitReview': 'समीक्षा जमा करें',
     'checklist.submitting': 'जमा किया जा रहा है...',
     'checklist.reviewing': 'समीक्षा की जा रही है...',
+    'checklist.alreadySubmitted': 'आज पहले ही जमा किया गया',
+    'checklist.alreadySubmittedMsg': 'आपने आज के लिए {type} चेकलिस्ट पहले ही जमा कर दी है।',
+    'checklist.checkingStatus': 'सबमिशन स्थिति की जांच हो रही है...',
+    'checklist.backToDashboard': 'डैशबोर्ड पर वापस जाएं',
     
     // History Page
     'history.title': 'ऑफिस बॉय चेकलिस्ट',

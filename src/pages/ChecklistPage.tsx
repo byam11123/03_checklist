@@ -23,20 +23,77 @@ const ChecklistPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [tasks, setTasks] = useState<TaskState[]>([]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // ADD THESE NEW STATES
+  const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
+  const [checkingSubmission, setCheckingSubmission] = useState(true);
 
+  // EXISTING useEffect for loading tasks
   useEffect(() => {
     const taskList = type ? checklists[type] : [];
     console.log(`Loading ${type} checklist with ${taskList.length} tasks:`, taskList);
-    setTasks(taskList.map(task => ({ 
-      task, 
-      isCompleted: false, 
+    setTasks(taskList.map(task => ({
+      task,
+      isCompleted: false,
       remarks: '',
       isVerified: false,
       supervisorRemarks: ''
     })));
   }, [type]);
+
+  // ADD THIS NEW useEffect - Check if already submitted today
+  useEffect(() => {
+    const checkTodaySubmission = async () => {
+      // Only check for Officeboy
+      if (user.role !== 'Officeboy') {
+        setCheckingSubmission(false);
+        return;
+      }
+
+      try {
+        const today = new Date().toLocaleDateString();
+        const storageKey = `lastSubmission_${user.name}_${type}_${today}`;
+        
+        // Check localStorage first (quick check)
+        const localSubmission = localStorage.getItem(storageKey);
+        if (localSubmission) {
+          setHasSubmittedToday(true);
+          setCheckingSubmission(false);
+          return;
+        }
+
+        // Also check from server (more reliable)
+        const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+        if (VITE_APPSCRIPT_URL) {
+          const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
+          const data = await response.json();
+          
+          // Check if user already submitted this checklist type today
+          const todaySubmission = data.find((entry: any) => {
+            const entryDate = new Date(entry.date).toLocaleDateString();
+            return (
+              entry.name === user.name &&
+              entry.checklistType === type &&
+              entryDate === today
+            );
+          });
+
+          if (todaySubmission) {
+            setHasSubmittedToday(true);
+            // Also save to localStorage for faster future checks
+            localStorage.setItem(storageKey, new Date().toISOString());
+          }
+        }
+      } catch (error) {
+        console.error('Error checking submission status:', error);
+      } finally {
+        setCheckingSubmission(false);
+      }
+    };
+
+    checkTodaySubmission();
+  }, [user.name, user.role, type]);
 
   const handleUpdateTask = (taskName: string, isCompleted: boolean, remarks: string, isVerified: boolean, supervisorRemarks: string) => {
     setTasks(currentTasks =>
@@ -127,7 +184,7 @@ const ChecklistPage = () => {
           localStorage.setItem(storageKey, new Date().toISOString());
         }
         
-        setIsSubmitted(true);
+
         if (user?.role === 'Supervisor') {
           alert(`Supervisor verification has been saved successfully! You can view it in History.`);
         } else {
@@ -194,24 +251,53 @@ const ChecklistPage = () => {
             ))}
           </div>
           <div className="mt-8 text-center">
-            {user.role === 'Officeboy' && (
-              <button
-                onClick={handleSubmit}
-                disabled={(!allTasksCompleted || isSubmitted) || isSubmitting}
-                className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                {isSubmitting ? t('checklist.submitting') : isSubmitted ? t('common.completed') : t('checklist.submitChecklist')}
-              </button>
-            )}
-            {user.role === 'Supervisor' && (
-              <button
-                onClick={handleSubmit} // Supervisors also submit their verifications
-                disabled={isSubmitting}
-                className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-              >
-                {isSubmitting ? t('checklist.reviewing') : t('checklist.submitReview')}
-              </button>
-            )}
+            {/* Submit/Review Buttons */}
+{checkingSubmission ? (
+  <div className="text-center py-4">
+    <p className="text-gray-600 dark:text-gray-400">
+      Checking submission status...
+    </p>
+  </div>
+) : hasSubmittedToday && user.role === 'Officeboy' ? (
+  <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg p-6 text-center">
+    <svg className="w-16 h-16 mx-auto mb-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+      Already Submitted Today
+    </h3>
+    <p className="text-gray-600 dark:text-gray-300 mb-4">
+      You have already submitted the {type} checklist for today.
+    </p>
+    <button
+      onClick={() => navigate('/dashboard')}
+      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
+    >
+      Back to Dashboard
+    </button>
+  </div>
+) : (
+  <>
+    {user.role === 'Officeboy' && (
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting || !allTasksCompleted}
+        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+      >
+        {isSubmitting ? 'Submitting...' : 'Submit Checklist'}
+      </button>
+    )}
+    {user.role === 'Supervisor' && (
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? 'Reviewing...' : 'Submit Review'}
+      </button>
+    )}
+  </>
+)}
           </div>
         </div>
       </main>
