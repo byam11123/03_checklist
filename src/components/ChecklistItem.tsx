@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ChecklistItemProps {
   task: string;
@@ -8,6 +9,7 @@ interface ChecklistItemProps {
 
 const ChecklistItem: React.FC<ChecklistItemProps> = ({ task, onUpdate }) => {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [isCompleted, setIsCompleted] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [isVerified, setIsVerified] = useState(false);
@@ -65,7 +67,7 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({ task, onUpdate }) => {
           {isOfficeboy && (
             <input
               type="text"
-              placeholder="Add remarks (optional)"
+              placeholder={t('detail.remarksPlaceholder')}
               value={remarks}
               onChange={handleRemarksChange}
               className="w-full mt-2 p-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -73,7 +75,7 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({ task, onUpdate }) => {
             />
           )}
            {isSupervisor && remarks && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1"><strong>Remarks:</strong> {remarks}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1"><strong>{t('detail.officeboyRemarks')}:</strong> {remarks}</p>
           )}
         </div>
 
@@ -86,12 +88,12 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({ task, onUpdate }) => {
                     onChange={handleVerificationChange}
                     className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Verify</label>
+                <label className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('checklist.submitReview')}</label>
              </div>
              {isVerified && (
                 <input
                     type="text"
-                    placeholder="Supervisor remarks"
+                    placeholder={t('detail.supervisorRemarks')}
                     value={supervisorRemarks}
                     onChange={handleSupervisorRemarksChange}
                     className="w-full mt-2 p-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"

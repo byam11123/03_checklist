@@ -4,11 +4,13 @@ import Header from '../components/Header';
 import { checklistService } from '../api/checklistService';
 import type { ChecklistEntry } from '../types/checklist';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const HistoryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [checklist, setChecklist] = useState<ChecklistEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +122,7 @@ const HistoryDetailPage = () => {
         <main className="container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading checklist details...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('detail.loading')}</p>
           </div>
         </main>
       </div>
@@ -134,14 +136,14 @@ const HistoryDetailPage = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              Checklist Details
+              {t('detail.checklistDetails')}
             </h2>
-            <p className="text-red-500">{error || 'Checklist not found'}</p>
+            <p className="text-red-500">{error || t('detail.notFound')}</p>
             <button
               onClick={() => navigate('/history')}
               className="mt-4 px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
             >
-              Back to History
+              {t('detail.backToHistory')}
             </button>
           </div>
         </main>
@@ -155,48 +157,48 @@ const HistoryDetailPage = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-            {checklist.checklistType.charAt(0).toUpperCase() + checklist.checklistType.slice(1)} Checklist Details
+            {t(`type.${checklist.checklistType}`)} {t('detail.checklistDetails')}
           </h2>
           <button
             onClick={() => navigate('/history')}
             className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
           >
-            Back to History
+            {t('detail.backToHistory')}
           </button>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Checklist Info</h3>
-              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">User:</span> {checklist.name}</p>
-              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Date:</span> {checklist.date}</p>
-              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Time:</span> {checklist.time}</p>
-              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Type:</span> {checklist.checklistType}</p>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{t('detail.checklistInfo')}</h3>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">{t('detail.user')}:</span> {checklist.name}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">{t('detail.date')}:</span> {checklist.date}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">{t('detail.time')}:</span> {checklist.time}</p>
+              <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">{t('detail.type')}:</span> {t(`type.${checklist.checklistType}`)}</p>
               <p className="text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Progress:</span> {checklist.completedTasks}/{checklist.totalTasks} tasks ({checklist.completionPercentage}%)
+                <span className="font-medium">{t('detail.progress')}:</span> {checklist.completedTasks}/{checklist.totalTasks} {t('history.tasksCompleted')} ({checklist.completionPercentage}%)
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Review Status</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{t('detail.reviewStatus')}</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                <span className="font-medium">Status:</span>
+                <span className="font-medium">{t('detail.status')}:</span>
                 <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
                   checklist.supervisorName
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                 }`}>
-                  {checklist.supervisorName ? 'Reviewed' : 'Pending Review'}
+                  {checklist.supervisorName ? t('history.reviewed') : t('history.pendingReview')}
                 </span>
               </p>
               {checklist.supervisorName && (
                 <>
                   <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Reviewed by:</span> {checklist.supervisorName}
+                    <span className="font-medium">{t('history.reviewedBy')}:</span> {checklist.supervisorName}
                   </p>
                   {checklist.verifiedAt && (
                     <p className="text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">On:</span> {checklist.verifiedAt}
+                      <span className="font-medium">{t('history.on')}:</span> {checklist.verifiedAt}
                     </p>
                   )}
                 </>
@@ -206,7 +208,7 @@ const HistoryDetailPage = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Tasks</h3>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">{t('detail.tasks')}</h3>
           
           <div className="space-y-4">
             {checklist.tasks.map((task, index) => (
@@ -230,16 +232,16 @@ const HistoryDetailPage = () => {
                     <div>
                       <p className="font-medium text-gray-800 dark:text-gray-200">{task.taskName}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        <span className="font-medium">Status:</span> {task.status}
+                        <span className="font-medium">{t('detail.status')}:</span> {t(task.status === 'Completed' ? 'common.completed' : 'common.pending')}
                       </p>
                       {task.remarks && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <span className="font-medium">Officeboy remarks:</span> {task.remarks}
+                          <span className="font-medium">{t('detail.officeboyRemarks')}:</span> {task.remarks}
                         </p>
                       )}
                       {task.supervisorRemarks && (
                         <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                          <span className="font-medium">Supervisor remarks:</span> {task.supervisorRemarks}
+                          <span className="font-medium">{t('detail.supervisorRemarks')}:</span> {task.supervisorRemarks}
                         </p>
                       )}
                     </div>
@@ -248,13 +250,13 @@ const HistoryDetailPage = () => {
                   {user.role === 'Supervisor' && (
                     <div className="mt-3 md:mt-0 md:ml-4 flex flex-col w-full md:w-auto">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Supervisor Remarks
+                        {t('detail.supervisorRemarksLabel')}
                       </label>
                       <input
                         type="text"
                         value={task.supervisorRemarks || ''}
                         onChange={(e) => handleReviewTask(index, e.target.value)}
-                        placeholder="Add your review comment..."
+                        placeholder={t('detail.remarksPlaceholder')}
                         className="w-full md:w-64 p-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -271,7 +273,7 @@ const HistoryDetailPage = () => {
                 disabled={isReviewing}
                 className="px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
               >
-                {isReviewing ? 'Submitting Review...' : 'Submit Review'}
+                {isReviewing ? t('checklist.reviewing') : t('checklist.submitReview')}
               </button>
             </div>
           )}

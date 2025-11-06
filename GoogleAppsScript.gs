@@ -255,6 +255,35 @@ function doOptions(e) {
   // Note: Google Apps Script handles CORS automatically for published web apps
   return output;
 }
+// Helper function to parse completion percentage correctly
+function parseCompletionPercentage(value) {
+  if (!value) return 0;
+  
+  // If it's already a number (0-100)
+  if (typeof value === 'number') {
+    // If it's a decimal (0.0 to 1.0), convert to percentage
+    if (value >= 0 && value <= 1) {
+      return Math.round(value * 100);
+    }
+    // If it's already percentage (0-100)
+    return Math.round(value);
+  }
+  
+  // If it's a string like "100%" or "100"
+  if (typeof value === 'string') {
+    var cleaned = value.replace('%', '').trim();
+    var num = parseFloat(cleaned);
+    
+    // If it was a decimal percentage (0.0-1.0)
+    if (num >= 0 && num <= 1) {
+      return Math.round(num * 100);
+    }
+    
+    return Math.round(num) || 0;
+  }
+  
+  return 0;
+}
 
 // Function to retrieve checklist history
 function getChecklistHistory(e) {
@@ -314,7 +343,8 @@ function getChecklistHistory(e) {
         tasks: tasks,
         completedTasks: parseInt(row[7]) || 0,
         totalTasks: parseInt(row[8]) || 0,
-        completionPercentage: parseInt(row[9]) || 0,
+        completionPercentage: parseCompletionPercentage(row[9]),
+
         supervisorName: (row[10] || '').toString(), // Original field name
         supervisorVerified: (row[11] || '').toString(),
         supervisorReview: (row[12] || '').toString(),
@@ -342,6 +372,7 @@ function getChecklistHistory(e) {
     return output;
   }
 }
+
 
 // Function to retrieve specific checklist details
 function getChecklistDetail(e) {
@@ -412,7 +443,7 @@ function getChecklistDetail(e) {
       tasks: tasks,
       completedTasks: parseInt(row[7]) || 0,
       totalTasks: parseInt(row[8]) || 0,
-      completionPercentage: parseInt(row[9]) || 0,
+      completionPercentage: parseCompletionPercentage(row[9]),
       supervisorName: (row[10] || '').toString(),
       supervisorVerified: (row[11] || '').toString(),
       supervisorReview: (row[12] || '').toString(),

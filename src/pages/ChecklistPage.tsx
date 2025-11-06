@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import ChecklistItem from '../components/ChecklistItem';
 import { checklists } from '../data';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 
 type ChecklistType = 'opening' | 'closing';
 
@@ -20,6 +21,7 @@ const ChecklistPage = () => {
   const { type } = useParams<{ type: ChecklistType }>();
   const { user } = useUser();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<TaskState[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,7 +156,7 @@ const ChecklistPage = () => {
     }
   };
 
-  const title = type ? `${type.charAt(0).toUpperCase() + type.slice(1)} Checklist` : 'Checklist';
+  const title = type ? t(`checklist.${type}`) : 'Checklist';
   const allTasksCompleted = tasks.every(t => t.isCompleted);
 
   return (
@@ -164,21 +166,20 @@ const ChecklistPage = () => {
         <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-              {user.role === 'Supervisor' ? `Review ${title}` : title}
+              {user.role === 'Supervisor' ? `${t('checklist.reviewNote')} ${title}` : title}
             </h2>
             <button
               onClick={() => navigate('/dashboard')}
               className="px-4 py-2 font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Back to Dashboard
+              {t('history.backToDashboard')}
             </button>
           </div>
           
           {user.role === 'Supervisor' && (
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
               <p className="text-blue-800 dark:text-blue-200">
-                <strong>Note:</strong> You are reviewing this {type} checklist. 
-                As a supervisor, you can verify tasks and add remarks to office boy submissions.
+                <strong>{t('checklist.reviewNote')}:</strong> {t('checklist.supervisorNote')}
               </p>
             </div>
           )}
@@ -199,7 +200,7 @@ const ChecklistPage = () => {
                 disabled={(!allTasksCompleted || isSubmitted) || isSubmitting}
                 className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                {isSubmitting ? 'Submitting...' : isSubmitted ? 'Submitted' : 'Submit Checklist'}
+                {isSubmitting ? t('checklist.submitting') : isSubmitted ? t('common.completed') : t('checklist.submitChecklist')}
               </button>
             )}
             {user.role === 'Supervisor' && (
@@ -208,7 +209,7 @@ const ChecklistPage = () => {
                 disabled={isSubmitting}
                 className="w-full md:w-auto px-6 py-3 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
               >
-                {isSubmitting ? 'Saving Review...' : 'Submit Review'}
+                {isSubmitting ? t('checklist.reviewing') : t('checklist.submitReview')}
               </button>
             )}
           </div>
