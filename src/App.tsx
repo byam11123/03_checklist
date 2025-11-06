@@ -6,6 +6,7 @@ import ChecklistPage from './pages/ChecklistPage';
 import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
 import SummaryReportPage from './pages/SummaryReportPage';
+import OfflineIndicator from './components/OfflineIndicator';
 
 // A wrapper to protect routes that require authentication
 import type { ReactElement } from 'react';
@@ -34,6 +35,7 @@ const AppRoutes = () => {
   return (
     <Router>
       <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+        <OfflineIndicator />
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route 

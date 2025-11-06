@@ -55,9 +55,13 @@ const ChecklistPage = () => {
         const today = new Date().toLocaleDateString();
         const storageKey = `lastSubmission_${user.name}_${type}_${today}`;
         
+        console.log(`Checking for existing ${type} checklist submission for ${user.name} on ${today}`);
+        console.log(`Storage key: ${storageKey}`);
+        
         // Check localStorage first (quick check)
         const localSubmission = localStorage.getItem(storageKey);
         if (localSubmission) {
+          console.log(`Found local submission for ${type} checklist`);
           setHasSubmittedToday(true);
           setCheckingSubmission(false);
           return;
@@ -66,23 +70,51 @@ const ChecklistPage = () => {
         // Also check from server (more reliable)
         const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
         if (VITE_APPSCRIPT_URL) {
-          const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
-          const data = await response.json();
-          
-          // Check if user already submitted this checklist type today
-          const todaySubmission = data.find((entry: any) => {
-            const entryDate = new Date(entry.date).toLocaleDateString();
-            return (
-              entry.name === user.name &&
-              entry.checklistType === type &&
-              entryDate === today
-            );
-          });
+          try {
+            const response = await fetch(`${VITE_APPSCRIPT_URL}?action=getHistory`);
+            const responseText = await response.text();
+            
+            let data;
+            try {
+              data = JSON.parse(responseText);
+            } catch (parseError) {
+              console.error('Error parsing server response:', responseText);
+              // If there's an error parsing the response, but we have network access, 
+              // we'll continue with the submission to be safe
+              setCheckingSubmission(false);
+              return;
+            }
+            
+            console.log(`Server data received for ${user.name}:`, data);
+            console.log(`Looking for ${type} checklist on ${today}`);
+            
+            // Check if user already submitted this checklist type today
+            const todaySubmission = data.find((entry: any) => {
+              const entryDate = new Date(entry.date).toLocaleDateString();
+              const matches = (
+                entry.name === user.name &&
+                entry.checklistType === type &&  // Critical: Must match the current checklist type
+                entryDate === today
+              );
+              
+              console.log(`Checking entry:`, entry, `Matches:`, matches, `Expected type: ${type}, Got type: ${entry.checklistType}`);
+              return matches;
+            });
 
-          if (todaySubmission) {
-            setHasSubmittedToday(true);
-            // Also save to localStorage for faster future checks
-            localStorage.setItem(storageKey, new Date().toISOString());
+            if (todaySubmission) {
+              console.log(`Found server submission for ${type} checklist`, todaySubmission);
+              setHasSubmittedToday(true);
+              // Also save to localStorage for faster future checks
+              localStorage.setItem(storageKey, new Date().toISOString());
+              console.log(`Saved submission to localStorage with key: ${storageKey}`);
+            } else {
+              console.log(`No server submission found for ${type} checklist on ${today}`);
+            }
+          } catch (networkError) {
+            console.error('Network error while checking submission status:', networkError);
+            // If there's a network error, we can't verify submission status,
+            // so we'll proceed to let the user submit (to be safe)
+            console.log('Network error occurred, proceeding with checklist access');
           }
         }
       } catch (error) {
