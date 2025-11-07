@@ -6,6 +6,7 @@ import ChecklistItem from '../components/ChecklistItem';
 import { checklists } from '../data';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import { saveOfflineChecklist } from '../utils/offlineStorage';
 
 type ChecklistType = 'opening' | 'closing';
 
@@ -138,35 +139,11 @@ const ChecklistPage = () => {
     );
   };
 
-  // Format date and time in a readable format
-  const formatDateTime = (date: Date) => {
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).replace(',', '');
-  };
-
-  const handleSubmit = () => {
-    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
-    
-    // Calculate completion statistics
-    const completedTasks = tasks.filter(task => task.isCompleted).length;
-    const totalTasks = tasks.length;
-    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    console.log('Submitting data to Google Sheets...');
-    console.log(`Total tasks: ${totalTasks}, Completed tasks: ${totalTasks}`);
-    
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    
-    // Send all tasks as a single batch to avoid duplicate submission issues
-    const currentDateTime = new Date();
-    const payload: any = {
+
+    // Prepare payload first
+    const payload = {
       user: user.name,
       role: user.role,
       checklistType: type,
@@ -174,76 +151,80 @@ const ChecklistPage = () => {
         taskName: task.task,
         status: task.isCompleted ? 'Completed' : 'Pending',
         remarks: task.remarks,
-        supervisorRemarks: task.supervisorRemarks
+        supervisorRemarks: task.supervisorRemarks || ''
       })),
-      timestamp: formatDateTime(currentDateTime),
-      completedTasks: completedTasks,
-      totalTasks: totalTasks,
-      completionPercentage: completionPercentage,
-      loginTime: formatDateTime(currentDateTime),
-      supervisor: user.role === 'Supervisor' ? user.name : '',
-      supervisorTimestamp: user.role === 'Supervisor' ? formatDateTime(currentDateTime) : '',
-      supervisorRemarks: user.role === 'Supervisor' ? 'Supervisor review' : '' // Add supervisor remarks field
+      timestamp: new Date().toISOString(),
+      loginTime: new Date().toLocaleTimeString()
     };
-    
-    // If this is a supervisor, they are updating an existing checklist
-    if (user.role === 'Supervisor') {
-      // Get the checklist ID from URL parameter to update the existing row
-      const urlParams = new URLSearchParams(window.location.search);
-      const checklistId = urlParams.get('checklistId');
-      if (checklistId) {
-        payload.checklistId = parseInt(checklistId);
-      }
-    }
-    
-    console.log('Batch payload:', payload);
 
-    if (VITE_APPSCRIPT_URL) {
-      // Submit the entire checklist as one request
-      fetch(VITE_APPSCRIPT_URL, {
+    const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+
+    // Check if offline BEFORE attempting fetch
+    if (!navigator.onLine) {
+      console.log('Offline mode detected - saving locally');
+      saveOfflineChecklist(payload);
+      alert('📱 You are offline. Checklist saved locally and will sync when you\'re back online.');
+      setIsSubmitting(false);
+      navigate('/dashboard');
+      return;
+    }
+
+    // Check if API URL is configured
+    if (!VITE_APPSCRIPT_URL) {
+      console.error('API URL not configured - saving offline');
+      saveOfflineChecklist(payload);
+      alert('⚠️ Configuration error. Checklist saved offline.');
+      setIsSubmitting(false);
+      navigate('/dashboard');
+      return;
+    }
+
+    // Try online submission with timeout
+    try {
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      await fetch(VITE_APPSCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Google Apps Script requires no-cors mode from web applications
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        // With no-cors mode, we can't access response details
-        console.log('Batch request sent for checklist type:', type);
-        
-        // For Office Boys, record the submission in localStorage to prevent duplicate attempts
-        if (user.role === 'Officeboy' && type) {
-          const today = new Date().toLocaleDateString();
-          const storageKey = `lastSubmission_${user.name}_${type}_${today}`;
-          localStorage.setItem(storageKey, new Date().toISOString());
-        }
-        
-
-        if (user?.role === 'Supervisor') {
-          alert(`Supervisor verification has been saved successfully! You can view it in History.`);
-        } else {
-          alert(`Checklist has been submitted successfully! ${totalTasks} tasks sent.`);
-        }
-        
-        if (user?.role === 'Supervisor') {
-          navigate('/history');
-        } else {
-          navigate('/dashboard');
-        }
-      })
-      .catch(error => {
-        console.error('Network error sending batch data:', error);
-        console.error('Full error object:', error);
-        console.error('URL being called:', VITE_APPSCRIPT_URL);
-        alert(`Error submitting checklist: ${error.message}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
-    } else {
-      console.warn('VITE_APPSCRIPT_URL is not set. Data will not be sent to Google Sheets.');
-      alert('Warning: Google Apps Script URL is not configured. Data will not be saved.');
+
+      clearTimeout(timeoutId);
+      
+      // Save to localStorage as backup even on success
+      const today = new Date().toLocaleDateString();
+      const storageKey = `lastSubmission_${user.name}_${type}_${today}`;
+      localStorage.setItem(storageKey, new Date().toISOString());
+
+      alert('✅ Checklist submitted successfully!');
+      navigate('/dashboard');
+
+    } catch (error: any) {
+      console.error('Submission error object:', error);
+      
+      // Determine error type
+      let errorMessage = 'An unexpected error occurred. Saved offline.';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Saved offline.';
+      } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+        errorMessage = 'Network error. Saved offline.';
+      } else if (error.message) {
+        errorMessage = `Submission failed: ${error.message}. Saved offline.`;
+      }
+      
+      // Always save offline as fallback
+      saveOfflineChecklist(payload);
+      alert(`📱 ${errorMessage}\n\nYour checklist is saved and will sync automatically when you\'re back online.`);
+      navigate('/dashboard');
+      
+    } finally {
       setIsSubmitting(false);
     }
   };

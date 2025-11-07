@@ -6,6 +6,7 @@ import type { ChecklistEntry } from '../types/checklist';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import HistoryFilter from '../components/HistoryFilter';
+import { getOfflineChecklists } from '../utils/offlineStorage';
 
 const HistoryPage = () => {
   const { user } = useUser();
@@ -19,40 +20,72 @@ const HistoryPage = () => {
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
   useEffect(() => {
-  const loadChecklists = async () => {
-  try {
-    console.log('Attempting to load checklist history...');
-    const data = await checklistService.fetchChecklistHistory();
-    console.log('Received data:', data);
-    
-    // Sort by date descending (latest first)
-    const sortedData = data.sort((a, b) => {
-      // Parse dates for comparison
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      
-      // If dates are same, sort by time
-      if (dateA.getTime() === dateB.getTime()) {
-        const timeA = a.time || '00:00:00';
-        const timeB = b.time || '00:00:00';
-        return timeB.localeCompare(timeA); // Descending
-      }
-      
-      return dateB.getTime() - dateA.getTime(); // Descending (latest first)
-    });
-    
-    // Filter for office boy checklists only if user is a supervisor
-    if (user.role === 'Supervisor') {
-      setChecklists(sortedData);
-    } else {
-      // For office boys, show only their own checklists
-      setChecklists(sortedData.filter(entry => entry.name === user.name));
-    }
-    setLoading(false);
+    const loadChecklists = async () => {
+      try {
+        console.log('Attempting to load checklist history...');
+        
+        // Check if offline
+        if (!navigator.onLine) {
+          console.log('Offline - loading from local storage');
+          const offline = getOfflineChecklists();
+          const officeEntries = offline.map(item => ({
+            ...item.data,
+            id: item.id,
+            date: new Date(item.timestamp).toLocaleDateString(),
+            time: new Date(item.timestamp).toLocaleTimeString(),
+            _offline: true // Flag to show it's offline data
+          }));
+          setChecklists(officeEntries);
+          setLoading(false);
+          return;
+        }
 
+        const data = await checklistService.fetchChecklistHistory();
+        console.log('Received data:', data);
+        
+        // Sort by date descending (latest first)
+        const sortedData = data.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          
+          if (dateA.getTime() === dateB.getTime()) {
+            const timeA = a.time || '00:00:00';
+            const timeB = b.time || '00:00:00';
+            return timeB.localeCompare(timeA);
+          }
+          
+          return dateB.getTime() - dateA.getTime();
+        });
+        
+        setChecklists(sortedData);
+        
+        // Filter based on role
+        if (user.role === 'Supervisor') {
+          setChecklists(sortedData);
+        } else {
+          setChecklists(sortedData.filter(entry => entry.name === user.name));
+        }
+        setLoading(false);
+        
       } catch (err: any) {
         const errorMessage = err.message || 'Failed to load checklist history';
-        setError(errorMessage);
+        
+        // If network error, try loading offline data
+        if (err.message.includes('Failed to fetch') || !navigator.onLine) {
+          console.log('Network error - loading offline data');
+          const offline = getOfflineChecklists();
+          const offlineEntries = offline.map(item => ({
+            ...item.data,
+            id: item.id,
+            date: new Date(item.timestamp).toLocaleDateString(),
+            time: new Date(item.timestamp).toLocaleTimeString(),
+            _offline: true
+          }));
+          setChecklists(offlineEntries);
+        } else {
+          setError(errorMessage);
+        }
+        
         setLoading(false);
         console.error('Error loading checklists:', err);
       }

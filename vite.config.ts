@@ -29,28 +29,44 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'google-apps-script-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
         ],
       },
       manifest: {
-        name: 'Office Checklist',
+        name: 'Office Checklist Management',
         short_name: 'Checklist',
-        description: 'Office checklist application for daily tasks',
-        theme_color: '#6366f1',
+        description: 'Office checklist management system for daily tasks',
+        theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
-            src: 'src/assets/react.svg',
+            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233b82f6" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="50" fill="white">CL</text></svg>',
             sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: 'src/assets/react.svg',
+            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233b82f6" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="50" fill="white">CL</text></svg>',
             sizes: '512x512',
             type: 'image/svg+xml'
           }
-        ],
-        start_url: '/',
+        ]
       },
     })
   ],
