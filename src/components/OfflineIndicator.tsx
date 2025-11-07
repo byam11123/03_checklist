@@ -64,7 +64,7 @@ const OfflineIndicator = () => {
   };
 
   return (
-    <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${
+    <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${
       online 
         ? 'bg-yellow-500 text-white' 
         : 'bg-red-500 text-white animate-pulse'
