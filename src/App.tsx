@@ -6,6 +6,7 @@ import ChecklistPage from './pages/ChecklistPage';
 import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
 import SummaryReportPage from './pages/SummaryReportPage';
+import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import OfflineIndicator from './components/OfflineIndicator';
 
 // A wrapper to protect routes that require authentication
@@ -57,6 +58,10 @@ const AppRoutes = () => {
           <Route 
             path="/summary" 
             element={<ProtectedRoute><SummaryReportPage /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/profile" 
+            element={<ProtectedRoute><ProfileSettingsPage /></ProtectedRoute>} 
           />
         </Routes>
       </div>
