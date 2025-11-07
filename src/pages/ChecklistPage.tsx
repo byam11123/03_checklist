@@ -154,7 +154,7 @@ const ChecklistPage = () => {
         supervisorRemarks: task.supervisorRemarks || ''
       })),
       timestamp: new Date().toISOString(),
-      loginTime: new Date().toLocaleTimeString()
+      loginTime: new Date().toLocaleString(),
     };
 
     const VITE_APPSCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
