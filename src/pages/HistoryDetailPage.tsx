@@ -5,6 +5,7 @@ import { checklistService } from '../api/checklistService';
 import type { ChecklistEntry } from '../types/checklist';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getSupervisorTemplates } from '../config/remarkTemplates';
 
 const HistoryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,8 @@ const HistoryDetailPage = () => {
   const [checklist, setChecklist] = useState<ChecklistEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const supervisorTemplates = getSupervisorTemplates();
+  const [showTemplates, setShowTemplates] = useState<{ [key: number]: boolean }>({});
 
   useEffect(() => {
     const loadChecklistDetail = async () => {
@@ -69,6 +72,11 @@ const HistoryDetailPage = () => {
       ...checklist,
       tasks: updatedTasks
     });
+  };
+
+  const selectTemplate = (template: string, taskIndex: number) => {
+    handleReviewTask(taskIndex, template);
+    setShowTemplates(prev => ({ ...prev, [taskIndex]: false }));
   };
 
 
@@ -240,17 +248,49 @@ const HistoryDetailPage = () => {
                   </div>
                   
                   {user.role === 'Supervisor' && (
-                    <div className="mt-4 md:mt-0 md:ml-4 flex flex-col w-full md:w-80">
+                    <div className="mt-4 md:mt-0 md:ml-4 flex flex-col w-full md:w-80 relative">
                       <label className="font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {t('detail.supervisorRemarksLabel')}
                       </label>
-                      <input
-                        type="text"
-                        value={task.supervisorRemarks || ''}
-                        onChange={(e) => handleReviewTask(index, e.target.value)}
-                        placeholder={t('detail.remarksPlaceholder')}
-                        className="w-full p-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
+                      <div className="flex gap-2">
+                        <textarea
+                          value={task.supervisorRemarks || ''}
+                          onChange={(e) => handleReviewTask(index, e.target.value)}
+                          placeholder={t('detail.remarksPlaceholder')}
+                          rows={2}
+                          className="flex-1 px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowTemplates(prev => ({ ...prev, [index]: !prev[index] }))}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm self-start"
+                          title="Quick Templates"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {showTemplates[index] && (
+                        <div className="absolute z-10 mt-1 right-0 w-72 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+                          {Object.entries(supervisorTemplates).map(([category, templates]) => (
+                            <div key={category} className="p-2 border-t border-gray-200 dark:border-gray-600">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase">{category}</p>
+                              {templates.map((template, idx) => (
+                                <button
+                                  key={`${category}-${idx}`}
+                                  type="button"
+                                  onClick={() => selectTemplate(template, index)}
+                                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                                >
+                                  {template}
+                                </button>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
